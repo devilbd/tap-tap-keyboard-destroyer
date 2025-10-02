@@ -94,6 +94,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private fogSpots: FogSpot[] = [];
     private stripes: Stripe[] = [];
     private warpGate!: WarpGate;
+    private accretionDiskAngle = 0;
+    private vortexAngle = 0;
     private animationId = 0;
     private lastKeyPressTime = 0;
     private keyCooldowns: Map<string, number> = new Map();
@@ -1105,6 +1107,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         // Draw the vortex, which will now have a hole in it
         this.ctx.save();
         this.ctx.translate(x, y);
+        this.ctx.rotate(this.vortexAngle);
         this.stripes.forEach((stripe) => {
             this.ctx.beginPath();
             this.ctx.arc(
@@ -1123,17 +1126,40 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.ctx.restore();
     }
 
+    private drawAccretionDisk() {
+        const { x, y, radius } = this.warpGate;
+        this.ctx.save();
+        this.ctx.translate(x, y);
+        this.ctx.rotate(this.accretionDiskAngle);
+
+        const ringCount = 3;
+        const ringSpacing = 15;
+
+        for (let i = 0; i < ringCount; i++) {
+            this.ctx.beginPath();
+            const ringRadius = radius + 5 + i * ringSpacing;
+            this.ctx.arc(0, 0, ringRadius, 0, Math.PI * 1.5); // Draw a 3/4 circle
+            this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 + i * 0.05})`;
+            this.ctx.lineWidth = 1 + i;
+            this.ctx.stroke();
+        }
+        this.ctx.restore();
+    }
+
     private animate() {
         const canvas = this.canvasRef.nativeElement;
         this.ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
         this.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        this.vortexAngle += 0.0005;
         this.updateWarpGate();
+        this.accretionDiskAngle -= 0.002; // Rotate faster and in the opposite direction
         this.updateStripes();
         this.updateParticles();
 
         this.drawStripes();
         // Draw fog spots underneath the particles for a better depth effect
+        this.drawAccretionDisk();
         this.drawFogSpots();
         this.drawParticles();
 
