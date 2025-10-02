@@ -23,7 +23,7 @@
 </div>
 } @if (gameManager.isGameStarted() && !gameManager.isGameOver()) {
 <div class="score-display">
-  CRUSH KEYS: {{ gameManager.crushKeys() | number }}
+  SCORE: {{ gameManager.sessionScore() | number }}
 </div>
 <div class="timer-display">
   TIME {{ gameManager.timer() | number : "1.2-2" }}
@@ -67,7 +67,7 @@
 <div class="game-over-overlay">
   <div class="game-over-text">GAME OVER</div>
   <div class="final-score-text">
-    TOTAL CRUSH KEYS: {{ gameManager.crushKeys() | number }}
+    SESSION SCORE: {{ gameManager.finalSessionScore() | number }}
   </div>
   <button class="restart-button" (click)="restartGame()">PLAY AGAIN</button>
 </div>

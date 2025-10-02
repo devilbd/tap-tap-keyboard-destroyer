@@ -18,6 +18,8 @@ const BOOSTERS_STORAGE_KEY = 'crush_boosters';
 export class GameManagerService {
   // Game State as Signals
   crushKeys: WritableSignal<number> = signal(0);
+  sessionScore = signal(0);
+  finalSessionScore = signal(0);
   boosters: WritableSignal<number> = signal(0);
   level = signal(1);
   progress = signal(0);
@@ -77,9 +79,17 @@ export class GameManagerService {
     this.boosters.update((current) => current + amount);
   }
 
+  spendBooster(amount: number): boolean {
+    if (this.boosters() >= amount) {
+      this.boosters.update((b) => b - amount);
+      return true;
+    }
+    return false;
+  }
+
   addScore(points: number) {
     if (this.isGameOver()) return;
-    this.crushKeys.update((current) => current + points);
+    this.sessionScore.update((current) => current + points);
     this.progress.update((current) => current + points);
     this.updateLevel();
   }
@@ -101,6 +111,7 @@ export class GameManagerService {
     this.isGameStarted.set(false);
     this.isGameOver.set(false);
     this.level.set(1);
+    this.sessionScore.set(0);
     this.progress.set(0);
     this.updateProgressTarget();
 
@@ -122,7 +133,7 @@ export class GameManagerService {
 
   private startGameTimer() {
     this.stopGameTimer(); // Ensure no multiple timers
-    this.timer.set(GAME_CONFIG.timer.initialSeconds);
+    this.timer.set(60); // Set a fixed 60-second timer
     this.gameTimerInterval = window.setInterval(() => {
       this.timer.update((t) => t - 1);
       if (this.timer() <= 0) {
@@ -142,7 +153,6 @@ export class GameManagerService {
   private updateLevel() {
     while (this.progress() >= this.progressTarget()) {
       this.progress.update((p) => p - this.progressTarget());
-      this.addTime(GAME_CONFIG.timer.bonusSecondsPerLevel);
       this.level.update((l) => l + 1);
       this.updateProgressTarget();
 
@@ -166,6 +176,8 @@ export class GameManagerService {
   endGame() {
     this.isGameOver.set(true);
     this.isGameStarted.set(false);
+    this.finalSessionScore.set(this.sessionScore());
+    this.crushKeys.update((current) => current + this.sessionScore());
     this.stopGameTimer();
   }
 }

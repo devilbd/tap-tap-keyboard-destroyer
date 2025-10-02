@@ -189,8 +189,17 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     this.lastTouchCount = event.touches.length;
   }
 
+  onBoosterButtonClick() {
+    this.triggerCrushBooster();
+  }
+
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.triggerCrushBooster();
+      return;
+    }
     if (this.gameManager.isGameOver() || !this.gameManager.isGameStarted())
       return;
 
@@ -237,7 +246,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private processCombo(comboIdentifier?: string) {
+  private processCombo(comboIdentifier?: string, x?: number, y?: number) {
     const currentTime = Date.now();
 
     if (!comboIdentifier) {
@@ -278,14 +287,16 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
       );
       this.triggerComboText(comboX, comboY);
     } else {
-      // For mobile combos, keep it in the center for a big impact
+      // If x and y are provided (like from a booster), use them. Otherwise, default to center.
       const { width, height } = this.canvasRef.nativeElement;
+      const comboX = x ?? width / 2;
+      const comboY = y ?? height / 2;
       this.triggerEffect(
-        width / 2,
-        height / 2,
+        comboX,
+        comboY,
         GAME_CONFIG.explosion.types.highStrike
       );
-      this.triggerComboText(width / 2, height / 2);
+      this.triggerComboText(comboX, comboY);
     }
 
     const { keyFatigue } = GAME_CONFIG;
@@ -302,17 +313,6 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
       level: this.gameManager.level(),
     });
     this.playRandomComboSound();
-
-    const { timer: timerConfig } = GAME_CONFIG;
-    if (Math.random() < timerConfig.comboBonusProbability) {
-      const timeBonus = Math.max(
-        timerConfig.comboBonusMin,
-        timerConfig.comboBonusBase -
-          (this.gameManager.level() - 1) * timerConfig.comboBonusDecay
-      );
-      this.gameManager.addTime(timeBonus);
-      this.logToConsole(`Lucky! +${timeBonus.toFixed(2)}s time bonus!`);
-    }
 
     this.gameManager.addScore(GAME_CONFIG.explosion.types.highStrike.score);
     this.lastPressTimes.set(comboIdentifier, currentTime);
@@ -429,6 +429,27 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     this.logToConsole('Mobile High Strike!');
     this.processCombo(comboIdentifier);
     this.lastPressTimes.set(comboIdentifier, currentTime);
+  }
+
+  private triggerCrushBooster() {
+    if (
+      this.gameManager.isGameOver() ||
+      !this.gameManager.isGameStarted() ||
+      !this.gameManager.spendBooster(1)
+    ) {
+      return;
+    }
+
+    this.logToConsole('CRUSH BOOSTER ACTIVATED!');
+
+    for (let i = 0; i < 10; i++) {
+      setTimeout(() => {
+        const { width, height } = this.canvasRef.nativeElement;
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        this.processCombo(`booster-${i}`, x, y);
+      }, i * 100); // 100ms delay between each combo
+    }
   }
 
   private playSound(soundFile: string): void {

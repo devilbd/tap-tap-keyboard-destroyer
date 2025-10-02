@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { GameManagerService } from '../game-manager/game-manager.service';
 import { RouterLink } from '@angular/router';
 
-const BOOSTER_COST = 100;
+const BOOSTER_COST = 100000;
 
 @Component({
   selector: 'app-store',

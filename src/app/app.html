@@ -1,1 +1,12 @@
 <router-outlet />
+<div class="app-container">
+  <div class="global-hud">
+    <div class="currency">
+      CRUSH KEYS: {{ gameManager.crushKeys() | number }}
+    </div>
+    <div class="currency booster-display">
+      BOOSTERS: {{ gameManager.boosters() | number }}
+    </div>
+  </div>
+  <router-outlet></router-outlet>
+</div>
