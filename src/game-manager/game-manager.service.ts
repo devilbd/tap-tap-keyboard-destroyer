@@ -182,7 +182,7 @@ export class GameManagerService {
 
     private startGameTimer() {
         this.stopGameTimer(); // Ensure no multiple timers
-        this.timer.set(5); // Set a fixed 60-second timer
+        this.timer.set(60); // Set a fixed 60-second timer
         this.gameTimerInterval = window.setInterval(() => {
             this.timer.update((t) => t - 1);
             if (this.timer() <= 0) {
