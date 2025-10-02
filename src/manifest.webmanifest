@@ -1,0 +1,17 @@
+{
+  "name": "Tap Tap Keyboard Destroyer",
+  "short_name": "TTKDestroyer",
+  "theme_color": "#0a0e27",
+  "background_color": "#0a0e27",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "assets/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

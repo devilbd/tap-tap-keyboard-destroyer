@@ -1,0 +1,57 @@
+<canvas #canvas></canvas>
+
+@if (!isGameStarted && !countdownValue) {
+<div class="startup-screen">
+  <h1 class="game-title">TAP TAP KEYBOARD DESTROYER</h1>
+  <img src="assets/images/logo.png" alt="Game Logo" class="logo" />
+  <button class="play-button" (click)="startGame()">PLAY</button>
+</div>
+} @if (countdownValue) {
+<div class="countdown-overlay">
+  @switch (countdownValue) { @case ('3') {
+  <div class="countdown-text">3</div>
+  } @case ('2') {
+  <div class="countdown-text">2</div>
+  } @case ('1') {
+  <div class="countdown-text">1</div>
+  } @case ('GO!') {
+  <div class="countdown-text">GO!</div>
+  } }
+</div>
+} @if (isGameStarted && !isGameOver) {
+<div class="score-display">SCORE {{ score | number }}</div>
+<div class="timer-display">TIME {{ timer | number : "1.2-2" }}</div>
+<div class="level-display">LEVEL {{ level }}</div>
+<div class="progress-container" [class.combo-pulse]="comboPulseActive">
+  <div
+    class="progress-bar"
+    [style.width.%]="(progress / progressTarget) * 100"
+    [style.background]="getProgressBarGradient()"
+  ></div>
+  <div class="progress-text">
+    {{ (progress / progressTarget) * 100 | number : "1.0-0" }}%
+  </div>
+</div>
+@if (showLevelUp) {
+<div class="level-up-overlay" [ngStyle]="{ opacity: showLevelUp ? 1 : 0 }">
+  <div class="level-up-text">LEVEL UP</div>
+</div>
+} @if (comboText) {
+<div class="combo-text-container">
+  <div
+    class="combo-text"
+    [ngStyle]="comboText.style"
+    [innerHTML]="comboText.text"
+  ></div>
+</div>
+}
+<!-- <div #console class="console">
+        <div *ngFor="let log of consoleLogs">{{ log }}</div>
+      </div> -->
+} @if (isGameOver) {
+<div class="game-over-overlay">
+  <div class="game-over-text">GAME OVER</div>
+  <div class="final-score-text">FINAL SCORE {{ score | number }}</div>
+  <button class="restart-button" (click)="restartGame()">PLAY AGAIN</button>
+</div>
+}
