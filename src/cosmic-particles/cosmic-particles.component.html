@@ -25,6 +25,11 @@
 <div class="score-display">
   SCORE: {{ gameManager.sessionScore() | number }}
 </div>
+<div class="booster-button-container">
+  <button class="booster-button" (click)="onBoosterButtonClick()">
+    USE BOOSTER
+  </button>
+</div>
 <div class="timer-display">
   TIME {{ gameManager.timer() | number : "1.2-2" }}
 </div>
