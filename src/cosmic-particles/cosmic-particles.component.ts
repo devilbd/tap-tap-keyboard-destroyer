@@ -12,6 +12,7 @@ import { Analytics, logEvent } from '@angular/fire/analytics';
 import { RouterLink } from '@angular/router';
 import { GAME_CONFIG } from '../constants/game-config';
 import { GameManagerService } from '../game-manager/game-manager.service';
+import packageInfo from '../../package.json';
 
 const PERSPECTIVE = 500;
 const FOCAL_LENGTH = 500;
@@ -87,6 +88,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     currentProgressBarGradient = GAME_CONFIG.progressBarGradients[0];
 
     consoleLogs: string[] = [];
+    gameVersion = packageInfo.version;
 
     constructor(
         private cdr: ChangeDetectorRef,

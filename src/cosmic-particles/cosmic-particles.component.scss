@@ -100,6 +100,16 @@ canvas {
     background: #ffec80; /* Lighter gold for hover */
 }
 
+.game-version {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
+    color: white;
+    opacity: 0.5;
+}
+
 .score-display {
     position: fixed;
     top: 30px;

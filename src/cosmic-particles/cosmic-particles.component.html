@@ -9,6 +9,7 @@
         <button class="play-button" (click)="startGame()">PLAY</button>
         <a routerLink="/store" class="play-button store-button">STORE</a>
     </div>
+    <div class="game-version">Version {{ gameVersion }}</div>
 </div>
 } @if (gameManager.countdownValue(); as countdown) {
 <div class="countdown-overlay">
