@@ -26,6 +26,8 @@ interface Particle {
     vz: number;
     baseSize: number;
     color: string;
+    prevX?: number;
+    prevY?: number;
     alpha: number;
     life: number;
     shape?: 'circle' | 'square' | 'triangle';
@@ -42,6 +44,23 @@ interface FogSpot {
     color: string;
     alpha: number;
     life: number;
+}
+
+interface Stripe {
+    radius: number; // distance from center
+    angle: number; // current angle
+    speed: number; // angular speed
+    length: number; // length of the stripe (as an angle)
+    width: number; // thickness of the stripe
+    alpha: number;
+}
+
+interface WarpGate {
+    x: number;
+    y: number;
+    radius: number;
+    vx: number;
+    vy: number;
 }
 
 type ExplosionType = {
@@ -73,6 +92,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private ctx!: CanvasRenderingContext2D;
     private particles: Particle[] = [];
     private fogSpots: FogSpot[] = [];
+    private stripes: Stripe[] = [];
+    private warpGate!: WarpGate;
     private animationId = 0;
     private lastKeyPressTime = 0;
     private keyCooldowns: Map<string, number> = new Map();
@@ -104,6 +125,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.consoleLogs = [];
         this.particles = [];
         this.fogSpots = [];
+        this.stripes = [];
+        this.initializeWarpGate();
         this.keyCooldowns.clear();
         this.lastPressTimes.clear();
         this.activeKeys.clear();
@@ -113,6 +136,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.currentProgressBarGradient = GAME_CONFIG.progressBarGradients[0];
         this.lastTouchCount = 0;
         this.initializeParticles();
+        this.initializeStripes();
         this.animate();
         this.gameManager.restartGame(); // This method is for starting a new game
     }
@@ -142,6 +166,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
         this.resizeCanvas();
         this.initializeParticles();
+        this.initializeStripes();
+        this.initializeWarpGate();
         this.animate();
         this.addPunctuationStyles();
         this.initializeKeyboardMatrix();
@@ -164,6 +190,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     onResize() {
         this.resizeCanvas();
         this.initializeKeyboardMatrix();
+        this.initializeStripes();
+        this.initializeWarpGate();
     }
 
     @HostListener('mousedown', ['$event'])
@@ -335,6 +363,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         const comboX = x ?? width / 2;
         const comboY = y ?? height / 2;
         const comboText = this.triggerComboText(comboX, comboY);
+        this.nudgeWarpGate(comboX, comboY);
         this.gameManager.recordCombo(comboText);
         this.gameManager.recordBigCombo();
         this.logToConsole(`High Strike! Combo: '${comboIdentifier}'`);
@@ -539,6 +568,31 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         }
     }
 
+    private nudgeWarpGate(targetX: number, targetY: number) {
+        const nudgeStrength = 0.2; // How strongly the combo pulls the gate
+        const maxVelocity = 3; // Prevent it from moving too fast
+
+        const dx = targetX - this.warpGate.x;
+        const dy = targetY - this.warpGate.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 1) {
+            // Add a velocity component towards the combo
+            this.warpGate.vx += (dx / distance) * nudgeStrength;
+            this.warpGate.vy += (dy / distance) * nudgeStrength;
+
+            // Clamp the velocity to the max speed
+            this.warpGate.vx = Math.max(
+                -maxVelocity,
+                Math.min(maxVelocity, this.warpGate.vx)
+            );
+            this.warpGate.vy = Math.max(
+                -maxVelocity,
+                Math.min(maxVelocity, this.warpGate.vy)
+            );
+        }
+    }
+
     private handleInteraction(x: number, y: number) {
         // Find the nearest key in the matrix to the tap location
         let nearestKey: string | null = null;
@@ -654,6 +708,39 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
             this.keyboardMatrix.set(key, { x, y });
+        }
+    }
+
+    private initializeWarpGate() {
+        const canvas = this.canvasRef.nativeElement;
+        this.warpGate = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 50, // Make the black hole smaller
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+        };
+    }
+
+    private initializeStripes() {
+        this.stripes = [];
+        const canvas = this.canvasRef.nativeElement;
+        const numStripes = 200;
+        const maxRadius = Math.sqrt(
+            Math.pow(canvas.width / 2, 2) + Math.pow(canvas.height / 2, 2)
+        );
+
+        for (let i = 0; i < numStripes; i++) {
+            this.stripes.push({
+                radius: Math.random() * maxRadius,
+                angle: Math.random() * Math.PI * 2,
+                speed:
+                    (Math.random() * 0.001 + 0.0005) *
+                    (Math.random() < 0.5 ? 1 : -1),
+                length: Math.random() * 0.02 + 0.01,
+                width: Math.random() * 2 + 1,
+                alpha: Math.random() * 0.2 + 0.1,
+            });
         }
     }
 
@@ -793,10 +880,68 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         }, keyFatigue.cooldownDecayIntervalMs);
     }
 
+    private updateWarpGate() {
+        const canvas = this.canvasRef.nativeElement;
+        const gate = this.warpGate;
+
+        gate.x += gate.vx;
+        gate.y += gate.vy;
+
+        // Ensure the entire rectangle stays within the canvas bounds
+        if (gate.x - gate.radius < 0) {
+            gate.x = gate.radius;
+            gate.vx *= -1;
+        } else if (gate.x + gate.radius > canvas.width) {
+            gate.x = canvas.width - gate.radius;
+            gate.vx *= -1;
+        }
+        if (gate.y - gate.radius < 0) {
+            gate.y = gate.radius;
+            gate.vy *= -1;
+        } else if (gate.y + gate.radius > canvas.height) {
+            gate.y = canvas.height - gate.radius;
+            gate.vy *= -1;
+        }
+    }
+
+    private updateStripes() {
+        const canvas = this.canvasRef.nativeElement;
+        this.stripes.forEach((stripe) => {
+            stripe.angle += stripe.speed;
+            // Slowly pull stripes towards the warp gate
+            stripe.radius -= 0.05;
+            if (stripe.radius < 0)
+                stripe.radius = Math.max(canvas.width, canvas.height) / 2;
+        });
+    }
+
     private updateParticles() {
         this.particles = this.particles.filter((particle) => {
+            // Add gravitational pull from the warp gate for cosmic particles
+            if (particle.vz === 0) {
+                const dx = this.warpGate.x - particle.x;
+                const dy = this.warpGate.y - particle.y;
+                const distSq = dx * dx + dy * dy;
+                const pullRadius = this.warpGate.radius * 3;
+
+                // If inside the event horizon, consume the particle
+                if (distSq < this.warpGate.radius * this.warpGate.radius) {
+                    particle.life = 0; // Mark for removal
+                } else if (distSq < pullRadius * pullRadius) {
+                    // If within the gravitational pull area, affect its velocity
+                    const dist = Math.sqrt(distSq);
+                    const force = (1 - dist / pullRadius) * 0.2; // Adjust strength of the pull
+                    particle.vx += (dx / dist) * force;
+                    particle.vy += (dy / dist) * force;
+                }
+            }
+
             particle.x += particle.vx;
             particle.y += particle.vy;
+
+            particle.prevX = particle.x;
+            particle.prevY = particle.y;
+
             particle.z += particle.vz;
 
             // Explosion particles (which have a vz) fade and fall
@@ -944,13 +1089,50 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         });
     }
 
+    private drawStripes() {
+        const { x, y, radius } = this.warpGate;
+
+        this.ctx.save();
+        // Create a clipping region for the "hole"
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+        this.ctx.clip();
+
+        // Clear the inside of the hole to create the void effect
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.ctx.restore();
+
+        // Draw the vortex, which will now have a hole in it
+        this.ctx.save();
+        this.ctx.translate(x, y);
+        this.stripes.forEach((stripe) => {
+            this.ctx.beginPath();
+            this.ctx.arc(
+                0,
+                0,
+                stripe.radius,
+                stripe.angle,
+                stripe.angle + stripe.length
+            );
+            // Make stripes more colorful
+            const hue = (stripe.angle * 30) % 360;
+            this.ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${stripe.alpha})`;
+            this.ctx.lineWidth = stripe.width;
+            this.ctx.stroke();
+        });
+        this.ctx.restore();
+    }
+
     private animate() {
         const canvas = this.canvasRef.nativeElement;
         this.ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
         this.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        this.updateWarpGate();
+        this.updateStripes();
         this.updateParticles();
 
+        this.drawStripes();
         // Draw fog spots underneath the particles for a better depth effect
         this.drawFogSpots();
         this.drawParticles();
