@@ -31,6 +31,10 @@ export const GAME_CONFIG = {
         // An exponent > 1 creates a steeper difficulty curve for higher levels.
         levelTargetExponent: 4,
     },
+    blackHole: {
+        comboThreshold: 70,
+        durationMs: 15000, // 15 seconds
+    },
     ultimateThreshold: 35,
     progressBarGradients: [
         'linear-gradient(90deg, #00ffff 0%, #00ff00 50%, #ffd700 100%)',

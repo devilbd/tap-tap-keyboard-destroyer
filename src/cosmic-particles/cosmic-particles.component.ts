@@ -612,6 +612,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private nudgeWarpGate(targetX: number, targetY: number) {
         const nudgeStrength = 0.2; // How strongly the combo pulls the gate
         const maxVelocity = 3; // Prevent it from moving too fast
+        if (!this.gameManager.isBlackHoleActive()) return;
 
         const dx = targetX - this.warpGate.x;
         const dy = targetY - this.warpGate.y;
@@ -946,6 +947,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     }
 
     private updateWarpGate() {
+        if (!this.gameManager.isBlackHoleActive()) return;
         const canvas = this.canvasRef.nativeElement;
         const gate = this.warpGate;
 
@@ -970,6 +972,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     }
 
     private updateStripes() {
+        if (!this.gameManager.isBlackHoleActive()) return;
         const canvas = this.canvasRef.nativeElement;
         this.stripes.forEach((stripe) => {
             stripe.angle += stripe.speed;
@@ -983,7 +986,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private updateParticles() {
         this.particles = this.particles.filter((particle) => {
             // Add gravitational pull from the warp gate for cosmic particles
-            if (particle.vz === 0) {
+            if (particle.vz === 0 && this.gameManager.isBlackHoleActive()) {
                 const dx = this.warpGate.x - particle.x;
                 const dy = this.warpGate.y - particle.y;
                 const distSq = dx * dx + dy * dy;
@@ -1160,6 +1163,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     }
 
     private drawStripes() {
+        if (!this.gameManager.isBlackHoleActive()) return;
         const { x, y, radius } = this.warpGate;
 
         this.ctx.save();
@@ -1195,6 +1199,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     }
 
     private drawAccretionDisk() {
+        if (!this.gameManager.isBlackHoleActive()) return;
         const { x, y, radius } = this.warpGate;
         this.ctx.save();
         this.ctx.translate(x, y);
@@ -1225,8 +1230,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         this.vortexAngle += 0.0005;
-        this.updateWarpGate();
         this.accretionDiskAngle -= 0.002; // Rotate faster and in the opposite direction
+        this.updateWarpGate();
         this.updateStripes();
         this.updateParticles();
 

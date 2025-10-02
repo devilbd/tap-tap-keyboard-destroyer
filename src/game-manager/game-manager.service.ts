@@ -28,6 +28,9 @@ export class GameManagerService {
     isUltimateReady = computed(
         () => this.ultimateComboCounter() >= GAME_CONFIG.ultimateThreshold
     );
+    blackHoleComboCounter = signal(0);
+    blackHoleComboThreshold = GAME_CONFIG.blackHole.comboThreshold;
+    isBlackHoleActive = signal(false);
     boosters: WritableSignal<number> = signal(0);
     timeBoosters: WritableSignal<number> = signal(0);
     level = signal(1);
@@ -149,6 +152,19 @@ export class GameManagerService {
     recordBigCombo() {
         if (this.isUltimateReady()) return;
         this.ultimateComboCounter.update((c) => c + 1);
+        if (!this.isBlackHoleActive()) {
+            this.blackHoleComboCounter.update((c) => c + 1);
+            if (
+                this.blackHoleComboCounter() >=
+                GAME_CONFIG.blackHole.comboThreshold
+            ) {
+                this.isBlackHoleActive.set(true);
+                setTimeout(() => {
+                    this.isBlackHoleActive.set(false);
+                    this.blackHoleComboCounter.set(0);
+                }, GAME_CONFIG.blackHole.durationMs);
+            }
+        }
     }
 
     useUltimate(): boolean {
@@ -174,6 +190,7 @@ export class GameManagerService {
         this.progress.set(0);
         this.updateProgressTarget();
         this.ultimateComboCounter.set(0);
+        this.blackHoleComboCounter.set(0);
         this.comboStats.set(new Map());
 
         this.countdownValue.set('3');

@@ -70,6 +70,17 @@
         }}%
     </div>
 </div>
+<div class="black-hole-progress-container">
+    <div
+        class="black-hole-progress-bar"
+        [style.width.%]="
+            (gameManager.blackHoleComboCounter() /
+                gameManager.blackHoleComboThreshold) *
+            100
+        "
+    ></div>
+    <div class="black-hole-progress-text">BLACK HOLE</div>
+</div>
 @if (gameManager.showLevelUp()) {
 <div
     class="level-up-overlay"
