@@ -195,6 +195,24 @@ canvas {
     background: #ffd700; /* Gold */
 }
 
+.ultimate-button {
+    background: #ff0000;
+    box-shadow: 0 0 15px #ff0000;
+}
+
+.ultimate-button:disabled {
+    background: #555;
+    color: #999;
+    -webkit-text-stroke: 1px black;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.ultimate-button:disabled .booster-key {
+    border-color: #333;
+}
+
 .level-display {
     position: fixed;
     top: 30px;

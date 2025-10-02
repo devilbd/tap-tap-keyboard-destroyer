@@ -206,6 +206,10 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.triggerTimeBooster();
     }
 
+    onUltimateButtonClick() {
+        this.triggerUltimate();
+    }
+
     @HostListener('window:keydown', ['$event'])
     onKeyDown(event: KeyboardEvent) {
         if (event.key === 'Enter' || event.key === '1') {
@@ -216,6 +220,11 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         if (event.key === '2') {
             event.preventDefault();
             this.triggerTimeBooster();
+            return;
+        }
+        if (event.key === '3') {
+            event.preventDefault();
+            this.triggerUltimate();
             return;
         }
         // Prevent default browser actions for other number keys if needed
@@ -325,6 +334,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         const comboY = y ?? height / 2;
         const comboText = this.triggerComboText(comboX, comboY);
         this.gameManager.recordCombo(comboText);
+        this.gameManager.recordBigCombo();
         this.logToConsole(`High Strike! Combo: '${comboIdentifier}'`);
         logEvent(this.analytics, 'high_strike_combo', {
             combo_keys: comboIdentifier,
@@ -450,6 +460,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             this.canvasRef.nativeElement.height / 2
         );
         this.gameManager.recordCombo(comboText);
+        this.gameManager.recordBigCombo();
         this.processCombo(comboIdentifier);
         this.lastPressTimes.set(comboIdentifier, currentTime);
     }
@@ -486,6 +497,28 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
         this.gameManager.addTime(15);
         this.logToConsole('TIME BOOSTER ACTIVATED! +15s');
+    }
+
+    private triggerUltimate() {
+        if (
+            this.gameManager.isGameOver() ||
+            !this.gameManager.isGameStarted() ||
+            !this.gameManager.useUltimate()
+        ) {
+            return;
+        }
+
+        this.logToConsole('ULTIMATE ACTIVATED!');
+
+        for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+                this.processCombo(
+                    `ultimate-${i}`,
+                    Math.random() * this.canvasRef.nativeElement.width,
+                    Math.random() * this.canvasRef.nativeElement.height
+                );
+            }, i * 50); // A faster 50ms delay between each combo
+        }
     }
 
     private playSound(soundFile: string): void {

@@ -1,4 +1,5 @@
 import {
+    computed,
     Injectable,
     signal,
     effect,
@@ -23,6 +24,10 @@ export class GameManagerService {
     finalSessionScore = signal(0);
     comboStats = signal<Map<string, number>>(new Map());
     finalComboStats = signal<Map<string, number>>(new Map());
+    ultimateComboCounter = signal(0);
+    isUltimateReady = computed(
+        () => this.ultimateComboCounter() >= GAME_CONFIG.ultimateThreshold
+    );
     boosters: WritableSignal<number> = signal(0);
     timeBoosters: WritableSignal<number> = signal(0);
     level = signal(1);
@@ -141,6 +146,19 @@ export class GameManagerService {
         return false;
     }
 
+    recordBigCombo() {
+        if (this.isUltimateReady()) return;
+        this.ultimateComboCounter.update((c) => c + 1);
+    }
+
+    useUltimate(): boolean {
+        if (!this.isUltimateReady()) {
+            return false;
+        }
+        this.ultimateComboCounter.set(0);
+        return true;
+    }
+
     recordCombo(comboIdentifier: string) {
         this.comboStats().set(
             comboIdentifier,
@@ -155,6 +173,7 @@ export class GameManagerService {
         this.sessionScore.set(0);
         this.progress.set(0);
         this.updateProgressTarget();
+        this.ultimateComboCounter.set(0);
         this.comboStats.set(new Map());
 
         this.countdownValue.set('3');

@@ -36,6 +36,13 @@
     >
         <span class="booster-key">2</span> USE TIME BOOSTER
     </button>
+    <button
+        class="booster-button ultimate-button"
+        (click)="onUltimateButtonClick()"
+        [disabled]="!gameManager.isUltimateReady()"
+    >
+        <span class="booster-key">3</span> ULTIMATE
+    </button>
 </div>
 <div class="timer-display">
     TIME {{ gameManager.timer() | number : "1.2-2" }}
