@@ -14,9 +14,11 @@
 
 .header {
   width: 100%;
-  text-align: center;
-  position: relative;
   margin-bottom: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
 }
 
 .header h1 {
@@ -26,33 +28,17 @@
 }
 
 .back-button {
-  position: absolute;
-  top: 50%;
-  left: 20px;
-  transform: translateY(-50%);
   color: #00ffff;
   text-decoration: none;
   font-size: 24px;
   -webkit-text-stroke: 1px black;
   transition: transform 0.2s;
+  position: absolute;
+  left: 20px;
 }
 
 .back-button:hover {
-  transform: translateY(-50%) scale(1.05);
-}
-
-.currency-display {
-  position: absolute;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
-  font-size: 24px;
-  text-align: right;
-}
-
-.currency {
-  color: #ffd700;
-  -webkit-text-stroke: 1px black;
+  transform: scale(1.05);
 }
 
 .items-grid {
@@ -102,4 +88,16 @@
 .cost-currency {
   color: #ffd700; /* Gold color */
   -webkit-text-stroke: 1px black;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    padding-top: 60px; /* Space for global HUD */
+  }
+  .back-button {
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }
