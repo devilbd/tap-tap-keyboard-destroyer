@@ -1,7 +1,7 @@
 <div class="store-container">
   <div class="header">
     <a routerLink="/game" class="back-button">← BACK TO GAME</a>
-    <h1>CRUSH KEY STORE</h1>
+    <h1>STORE</h1>
   </div>
 
   <div class="items-grid">
@@ -12,6 +12,14 @@
         <span class="cost-currency">Crush Keys</span>
       </p>
       <button (click)="buyBooster()">BUY</button>
+    </div>
+    <div class="item-card">
+      <h2>Time Booster</h2>
+      <p class="cost">
+        Cost: {{ timeBoosterCost | number }}
+        <span class="cost-currency">Crush Keys</span>
+      </p>
+      <button (click)="buyTimeBooster()">BUY</button>
     </div>
   </div>
 </div>

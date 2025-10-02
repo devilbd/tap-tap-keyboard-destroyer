@@ -4,6 +4,7 @@ import { GameManagerService } from '../game-manager/game-manager.service';
 import { RouterLink } from '@angular/router';
 
 const BOOSTER_COST = 100000;
+const TIME_BOOSTER_COST = 90000;
 
 @Component({
   selector: 'app-store',
@@ -14,6 +15,7 @@ const BOOSTER_COST = 100000;
 })
 export class StoreComponent {
   boosterCost = BOOSTER_COST;
+  timeBoosterCost = TIME_BOOSTER_COST;
 
   constructor(public gameManager: GameManagerService) {}
 
@@ -22,6 +24,17 @@ export class StoreComponent {
       this.gameManager.addBooster(1);
       // Optionally, show a success message
       console.log('Booster purchased!');
+    } else {
+      // Optionally, show an error message
+      console.log('Not enough Crush Keys!');
+    }
+  }
+
+  buyTimeBooster() {
+    if (this.gameManager.spendCrushKeys(this.timeBoosterCost)) {
+      this.gameManager.addTimeBooster(1);
+      // Optionally, show a success message
+      console.log('Time Booster purchased!');
     } else {
       // Optionally, show an error message
       console.log('Not enough Crush Keys!');

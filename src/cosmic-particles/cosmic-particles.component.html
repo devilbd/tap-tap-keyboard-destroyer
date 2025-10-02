@@ -1,68 +1,75 @@
 <canvas #canvas></canvas>
 
-@if (!gameManager.isGameStarted() && !gameManager.countdownValue()) {
+@if (!gameManager.isGameStarted() && !gameManager.isGameOver() &&
+!gameManager.countdownValue()) {
 <div class="startup-screen">
-  <h1 class="game-title">TAP TAP KEYBOARD DESTROYER</h1>
-  <img src="assets/images/logo.png" alt="Game Logo" class="logo" />
-  <div class="button-container">
-    <button class="play-button" (click)="startGame()">PLAY</button>
-    <a routerLink="/store" class="play-button store-button">STORE</a>
-  </div>
+    <h1 class="game-title">TAP TAP KEYBOARD DESTROYER</h1>
+    <img src="assets/images/logo.png" alt="Game Logo" class="logo" />
+    <div class="button-container">
+        <button class="play-button" (click)="startGame()">PLAY</button>
+        <a routerLink="/store" class="play-button store-button">STORE</a>
+    </div>
 </div>
 } @if (gameManager.countdownValue(); as countdown) {
 <div class="countdown-overlay">
-  @switch (countdown) { @case ('3') {
-  <div class="countdown-text">3</div>
-  } @case ('2') {
-  <div class="countdown-text">2</div>
-  } @case ('1') {
-  <div class="countdown-text">1</div>
-  } @case ('GO!') {
-  <div class="countdown-text">GO!</div>
-  } }
+    @switch (countdown) { @case ('3') {
+    <div class="countdown-text">3</div>
+    } @case ('2') {
+    <div class="countdown-text">2</div>
+    } @case ('1') {
+    <div class="countdown-text">1</div>
+    } @case ('GO!') {
+    <div class="countdown-text">GO!</div>
+    } }
 </div>
 } @if (gameManager.isGameStarted() && !gameManager.isGameOver()) {
 <div class="score-display">
-  SCORE: {{ gameManager.sessionScore() | number }}
+    SCORE: {{ gameManager.sessionScore() | number }}
 </div>
 <div class="booster-button-container">
-  <button class="booster-button" (click)="onBoosterButtonClick()">
-    USE BOOSTER
-  </button>
+    <button class="booster-button" (click)="onBoosterButtonClick()">
+        <span class="booster-key">1</span> USE BOOSTER
+    </button>
+    <button
+        class="booster-button time-booster-button"
+        (click)="onTimeBoosterButtonClick()"
+    >
+        <span class="booster-key">2</span> USE TIME BOOSTER
+    </button>
 </div>
 <div class="timer-display">
-  TIME {{ gameManager.timer() | number : "1.2-2" }}
+    TIME {{ gameManager.timer() | number : "1.2-2" }}
 </div>
 <div class="level-display">LEVEL {{ gameManager.level() }}</div>
 <div class="progress-container">
-  <div
-    class="progress-bar"
-    [style.width.%]="
-      (gameManager.progress() / gameManager.progressTarget()) * 100
-    "
-    [style.background]="getProgressBarGradient()"
-  ></div>
-  <div class="progress-text">
-    {{
-      (gameManager.progress() / gameManager.progressTarget()) * 100
-        | number : "1.0-0"
-    }}%
-  </div>
+    <div
+        class="progress-bar"
+        [style.width.%]="
+            (gameManager.progress() / gameManager.progressTarget()) * 100
+        "
+        [style.background]="getProgressBarGradient()"
+    ></div>
+    <div class="progress-text">
+        {{
+            (gameManager.progress() / gameManager.progressTarget()) * 100
+                | number : "1.0-0"
+        }}%
+    </div>
 </div>
 @if (gameManager.showLevelUp()) {
 <div
-  class="level-up-overlay"
-  [ngStyle]="{ opacity: gameManager.showLevelUp() ? 1 : 0 }"
+    class="level-up-overlay"
+    [ngStyle]="{ opacity: gameManager.showLevelUp() ? 1 : 0 }"
 >
-  <div class="level-up-text">LEVEL UP</div>
+    <div class="level-up-text">LEVEL UP</div>
 </div>
 } @if (comboText) {
 <div class="combo-text-container">
-  <div
-    class="combo-text"
-    [ngStyle]="comboText.style"
-    [innerHTML]="comboText.text"
-  ></div>
+    <div
+        class="combo-text"
+        [ngStyle]="comboText.style"
+        [innerHTML]="comboText.text"
+    ></div>
 </div>
 }
 <!-- <div #console class="console">
@@ -70,10 +77,26 @@
       </div> -->
 } @if (gameManager.isGameOver()) {
 <div class="game-over-overlay">
-  <div class="game-over-text">GAME OVER</div>
-  <div class="final-score-text">
-    SESSION SCORE: {{ gameManager.finalSessionScore() | number }}
-  </div>
-  <button class="restart-button" (click)="restartGame()">PLAY AGAIN</button>
+    <div class="game-over-text">GAME OVER</div>
+    <div class="summary-container">
+        <div class="final-score-text">
+            SESSION SCORE: {{ gameManager.finalSessionScore() | number }}
+        </div>
+        @if(gameManager.finalComboStats().size > 0) {
+        <div class="combo-stats">
+            <h3>COMBO STATS</h3>
+            <ul>
+                @for(combo of gameManager.finalComboStats() | keyvalue; track
+                combo.key) {
+                <li>{{ combo.key }}: {{ combo.value }}</li>
+                }
+            </ul>
+        </div>
+        }
+    </div>
+    <button class="restart-button" (click)="goToHome()">HOME</button>
+    <button class="restart-button play-again-button" (click)="playAgain()">
+        PLAY AGAIN
+    </button>
 </div>
 }

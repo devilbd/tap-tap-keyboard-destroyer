@@ -25,6 +25,11 @@
   color: #ff6ec7;
 }
 
+.time-booster-display {
+  font-size: 24px;
+  color: #ffd700; /* Gold */
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .global-hud {
@@ -35,6 +40,9 @@
     font-size: 20px;
   }
   .booster-display {
+    font-size: 16px;
+  }
+  .time-booster-display {
     font-size: 16px;
   }
 }
