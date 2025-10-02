@@ -234,6 +234,21 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.triggerCrushBooster();
     }
 
+    onBoosterButtonTouch(event: Event) {
+        event.preventDefault();
+        this.triggerCrushBooster();
+    }
+
+    onTimeBoosterButtonTouch(event: Event) {
+        event.preventDefault();
+        this.triggerTimeBooster();
+    }
+
+    onUltimateButtonTouch(event: Event) {
+        event.preventDefault();
+        this.triggerUltimate();
+    }
+
     onTimeBoosterButtonClick() {
         this.triggerTimeBooster();
     }
@@ -344,12 +359,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                     ? totalY / keyCount
                     : this.canvasRef.nativeElement.height / 2;
 
-            this.triggerEffect(
-                comboX,
-                comboY,
-                GAME_CONFIG.explosion.types.highStrike
-            );
-            this.triggerComboText(comboX, comboY);
+            this.consumeParticlesAt(comboX, comboY);
         }
 
         const { keyFatigue } = GAME_CONFIG;
@@ -365,6 +375,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         const comboX = x ?? width / 2;
         const comboY = y ?? height / 2;
         const comboText = this.triggerComboText(comboX, comboY);
+        this.consumeParticlesAt(comboX, comboY);
         this.nudgeWarpGate(comboX, comboY);
         this.gameManager.recordCombo(comboText);
         this.gameManager.recordBigCombo();
@@ -411,11 +422,38 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             return; // Do not score or create an explosion
         }
 
+        // Check if there are particles nearby before awarding score
+        const hitRadius = 50; // Radius to check for particles
+        const particlesNearby = this.particles.some((p) => {
+            // Only consider particles that are "in front" and visible
+            if (p.z <= 0 || p.alpha <= 0) {
+                return false;
+            }
+            // Use the same projection logic as rendering to check against screen coordinates
+            const perspective = FOCAL_LENGTH / (FOCAL_LENGTH + p.z);
+            const projectedX =
+                (p.x - this.ctx.canvas.width / 2) * perspective +
+                this.ctx.canvas.width / 2;
+            const projectedY =
+                (p.y - this.ctx.canvas.height / 2) * perspective +
+                this.ctx.canvas.height / 2;
+
+            const distance = Math.sqrt(
+                Math.pow(projectedX - x, 2) + Math.pow(projectedY - y, 2)
+            );
+            return distance < hitRadius;
+        });
+
+        if (!particlesNearby) {
+            this.logToConsole(
+                `Input '${identifier}' hit an empty space. No score.`
+            );
+            return;
+        }
+
         // Valid press, update timers
         this.lastPressTimes.set(identifier, currentTime);
         this.logToConsole(`Input '${identifier}' processed.`);
-
-        this.lastKeyPressTime = currentTime;
 
         const rand = Math.random();
         const { small, medium, large } = GAME_CONFIG.explosion.types;
@@ -434,6 +472,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         }
 
         this.triggerEffect(x, y, explosionType);
+        this.lastKeyPressTime = currentTime;
         this.gameManager.addScore(progressIncrement);
     }
 
@@ -593,6 +632,24 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 Math.min(maxVelocity, this.warpGate.vy)
             );
         }
+    }
+
+    private consumeParticlesAt(x: number, y: number) {
+        const consumptionRadius = 150; // The area of effect for the combo
+        this.particles.forEach((p) => {
+            const dx = x - p.x;
+            const dy = y - p.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < consumptionRadius) {
+                // Mark for consumption by giving it a negative life
+                p.life = -1;
+                // Give it a strong velocity towards the center of the combo
+                const force = 2; // Adjust for a stronger pull
+                p.vx = (dx / distance) * force * 5;
+                p.vy = (dy / distance) * force * 5;
+            }
+        });
     }
 
     private handleInteraction(x: number, y: number) {
@@ -808,12 +865,21 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         y: number,
         config: ExplosionType
     ): Particle {
-        const angle = Math.random() * Math.PI * 2;
+        const angle = Math.random() * Math.PI * 2; // Random direction
         const speed =
-            (Math.random() * 0.7 + 0.3) *
-            (Math.random() *
+            Math.random() *
                 (config.particleSpeed.max - config.particleSpeed.min) +
-                config.particleSpeed.min);
+            config.particleSpeed.min;
+
+        // Determine size based on explosion type to create more visual distinction
+        const sizeMultiplier =
+            config.score > 10 ? 1.5 : config.score > 1 ? 1.2 : 1;
+        const baseSize =
+            (Math.random() *
+                (config.particleSize.max - config.particleSize.min) +
+                config.particleSize.min) *
+            sizeMultiplier;
+
         const colors = GAME_CONFIG.explosion.colors;
         const shapes: Particle['shape'][] = ['circle', 'square', 'triangle'];
 
@@ -824,10 +890,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
             vz: (Math.random() - 0.5) * speed, // Give it 3D velocity
-            baseSize:
-                Math.random() *
-                    (config.particleSize.max - config.particleSize.min) +
-                config.particleSize.min,
+            baseSize,
             color: colors[Math.floor(Math.random() * colors.length)],
             alpha: 1,
             life: 1, // Explosion particles have a limited life
@@ -926,6 +989,11 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 const distSq = dx * dx + dy * dy;
                 const pullRadius = this.warpGate.radius * 3;
 
+                if (particle.life < 0) {
+                    // This particle is being consumed by a combo, accelerate its demise
+                    particle.life += 0.1; // Moves towards 0 from negative
+                    particle.alpha = Math.max(0, 1 + particle.life * 10);
+                }
                 // If inside the event horizon, consume the particle
                 if (distSq < this.warpGate.radius * this.warpGate.radius) {
                     particle.life = 0; // Mark for removal
@@ -1130,17 +1198,22 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         const { x, y, radius } = this.warpGate;
         this.ctx.save();
         this.ctx.translate(x, y);
-        this.ctx.rotate(this.accretionDiskAngle);
 
         const ringCount = 3;
         const ringSpacing = 15;
 
         for (let i = 0; i < ringCount; i++) {
             this.ctx.beginPath();
+            // Each ring gets its own speed multiplier.
+            const speedMultiplier = 1 + i * 0.5;
+            const startAngle = this.accretionDiskAngle * speedMultiplier;
+            // The end angle determines the length of the arc.
+            const endAngle = startAngle + Math.PI * 1.5;
             const ringRadius = radius + 5 + i * ringSpacing;
-            this.ctx.arc(0, 0, ringRadius, 0, Math.PI * 1.5); // Draw a 3/4 circle
-            this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 + i * 0.05})`;
-            this.ctx.lineWidth = 1 + i;
+            this.ctx.arc(0, 0, ringRadius, startAngle, endAngle);
+            // Make the rings more transparent for a subtler effect.
+            this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 + i * 0.03})`;
+            this.ctx.lineWidth = 1 + i * 0.5;
             this.ctx.stroke();
         }
         this.ctx.restore();
