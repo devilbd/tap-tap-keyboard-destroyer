@@ -85,6 +85,21 @@ canvas {
   background: #5fffff;
 }
 
+.button-container {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.store-button {
+  background: #ffd700; /* Gold color */
+  text-decoration: none;
+}
+
+.store-button:hover {
+  background: #ffec80; /* Lighter gold for hover */
+}
+
 .score-display {
   position: fixed;
   top: 30px;

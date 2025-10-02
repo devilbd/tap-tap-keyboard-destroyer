@@ -1,14 +1,17 @@
 <canvas #canvas></canvas>
 
-@if (!isGameStarted && !countdownValue) {
+@if (!gameManager.isGameStarted() && !gameManager.countdownValue()) {
 <div class="startup-screen">
   <h1 class="game-title">TAP TAP KEYBOARD DESTROYER</h1>
   <img src="assets/images/logo.png" alt="Game Logo" class="logo" />
-  <button class="play-button" (click)="startGame()">PLAY</button>
+  <div class="button-container">
+    <button class="play-button" (click)="startGame()">PLAY</button>
+    <a routerLink="/store" class="play-button store-button">STORE</a>
+  </div>
 </div>
-} @if (countdownValue) {
+} @if (gameManager.countdownValue(); as countdown) {
 <div class="countdown-overlay">
-  @switch (countdownValue) { @case ('3') {
+  @switch (countdown) { @case ('3') {
   <div class="countdown-text">3</div>
   } @case ('2') {
   <div class="countdown-text">2</div>
@@ -18,22 +21,34 @@
   <div class="countdown-text">GO!</div>
   } }
 </div>
-} @if (isGameStarted && !isGameOver) {
-<div class="score-display">SCORE {{ score | number }}</div>
-<div class="timer-display">TIME {{ timer | number : "1.2-2" }}</div>
-<div class="level-display">LEVEL {{ level }}</div>
-<div class="progress-container" [class.combo-pulse]="comboPulseActive">
+} @if (gameManager.isGameStarted() && !gameManager.isGameOver()) {
+<div class="score-display">
+  CRUSH KEYS: {{ gameManager.crushKeys() | number }}
+</div>
+<div class="timer-display">
+  TIME {{ gameManager.timer() | number : "1.2-2" }}
+</div>
+<div class="level-display">LEVEL {{ gameManager.level() }}</div>
+<div class="progress-container">
   <div
     class="progress-bar"
-    [style.width.%]="(progress / progressTarget) * 100"
+    [style.width.%]="
+      (gameManager.progress() / gameManager.progressTarget()) * 100
+    "
     [style.background]="getProgressBarGradient()"
   ></div>
   <div class="progress-text">
-    {{ (progress / progressTarget) * 100 | number : "1.0-0" }}%
+    {{
+      (gameManager.progress() / gameManager.progressTarget()) * 100
+        | number : "1.0-0"
+    }}%
   </div>
 </div>
-@if (showLevelUp) {
-<div class="level-up-overlay" [ngStyle]="{ opacity: showLevelUp ? 1 : 0 }">
+@if (gameManager.showLevelUp()) {
+<div
+  class="level-up-overlay"
+  [ngStyle]="{ opacity: gameManager.showLevelUp() ? 1 : 0 }"
+>
   <div class="level-up-text">LEVEL UP</div>
 </div>
 } @if (comboText) {
@@ -48,10 +63,12 @@
 <!-- <div #console class="console">
         <div *ngFor="let log of consoleLogs">{{ log }}</div>
       </div> -->
-} @if (isGameOver) {
+} @if (gameManager.isGameOver()) {
 <div class="game-over-overlay">
   <div class="game-over-text">GAME OVER</div>
-  <div class="final-score-text">FINAL SCORE {{ score | number }}</div>
+  <div class="final-score-text">
+    TOTAL CRUSH KEYS: {{ gameManager.crushKeys() | number }}
+  </div>
   <button class="restart-button" (click)="restartGame()">PLAY AGAIN</button>
 </div>
 }

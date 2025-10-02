@@ -9,94 +9,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Analytics, logEvent } from '@angular/fire/analytics';
-
-const GAME_CONFIG = {
-  baseParticleCount: 700,
-  maxParticles: 1200, // A hard cap to prevent performance degradation
-  minTimeBetweenKeysMs: 100,
-  comboTimeWindowMs: 400, // Time window to press 4 keys for a combo
-  keyFatigue: {
-    initialCooldownMs: 200, // Base cooldown for a key
-    cooldownIncrementMs: 150, // Penalty for spamming
-    maxCooldownMs: 2000, // Max penalty
-    comboCooldownMs: 3000, // Cooldown for a successful 4-key combo
-    cooldownDecayIntervalMs: 100, // How often to reduce cooldowns
-    cooldownDecayRateMs: 25, // How much to reduce by
-  },
-  mobile: {
-    gridSize: 10, // Creates a 10x10 grid for tap fatigue detection
-  },
-  console: {
-    maxLines: 50,
-  },
-  timer: {
-    initialSeconds: 10,
-    bonusSecondsPerLevel: 10,
-    comboBonusBase: 2,
-    comboBonusDecay: 0.1,
-    comboBonusMin: 1,
-    comboBonusProbability: 0.15, // 15% chance for a time bonus on a high strike
-  },
-  difficulty: {
-    levelTargetBase: 100,
-    levelTargetMultiplier: 10,
-    // An exponent > 1 creates a steeper difficulty curve for higher levels.
-    levelTargetExponent: 4,
-  },
-  progressBarGradients: [
-    'linear-gradient(90deg, #00ffff 0%, #00ff00 50%, #ffd700 100%)',
-    'linear-gradient(90deg, #ff00ff 0%, #ff6ec7 50%, #7b68ee 100%)',
-    'linear-gradient(90deg, #ff6600 0%, #ffff00 50%, #ff0000 100%)',
-  ],
-  sounds: {
-    comboSounds: ['bum.mp3', 'crush.mp3', 'smash.mp3', 'bam.mp3', 'booom.mp3'],
-  },
-  levelNotificationDurationMs: 1200,
-  cosmicParticle: {
-    colors: ['#4a9eff', '#7b68ee', '#00ffff', '#ff6ec7', '#ffd700', '#ffffff'],
-  },
-  explosion: {
-    colors: [
-      '#ff0000',
-      '#ff6600',
-      '#ffff00',
-      '#00ff00',
-      '#00ffff',
-      '#ff00ff',
-      '#ffffff',
-    ],
-    types: {
-      small: {
-        particleCount: { min: 10, max: 25 },
-        particleSize: { min: 2, max: 4 },
-        particleSpeed: { min: 4, max: 8 },
-        score: 1,
-        probability: 0.75, // 75% chance
-      },
-      medium: {
-        particleCount: { min: 40, max: 60 },
-        particleSize: { min: 2, max: 5 },
-        particleSpeed: { min: 6, max: 12 },
-        score: 5,
-        probability: 0.2, // 20% chance
-      },
-      large: {
-        particleCount: { min: 70, max: 100 },
-        particleSize: { min: 3, max: 7 },
-        particleSpeed: { min: 8, max: 16 },
-        score: 25,
-        probability: 0.05, // 5% chance
-      },
-      highStrike: {
-        particleCount: { min: 150, max: 200 },
-        particleSize: { min: 4, max: 9 },
-        particleSpeed: { min: 10, max: 20 },
-        score: 100, // This will fill the progress bar instantly
-        probability: 0, // Not triggered by random chance
-      },
-    },
-  },
-};
+import { RouterLink } from '@angular/router';
+import { GAME_CONFIG } from '../constants/game-config';
+import { GameManagerService } from '../game-manager/game-manager.service';
 
 const PERSPECTIVE = 500;
 const FOCAL_LENGTH = 500;
@@ -144,7 +59,7 @@ interface KeyPosition {
 @Component({
   selector: 'app-cosmic-particles',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './cosmic-particles.component.html',
   styleUrls: ['./cosmic-particles.component.scss'],
 })
@@ -168,35 +83,22 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
   private comboKeyTimestamps: number[] = [];
   private mobileTapTimestamps: number[] = [];
   private lastTouchCount = 0;
-  comboText: { text: string; style: { [key: string]: string } } | null = null;
-  comboPulseActive = false;
-  countdownValue: string | null = null;
+  comboText: { text: string; style: any } | null = null;
   currentProgressBarGradient = GAME_CONFIG.progressBarGradients[0];
 
-  score: number = 0;
-  level: number = 1;
-  progress: number = 0;
-  progressTarget: number = 100;
-  timer: number = 0;
-  isGameOver: boolean = false;
   consoleLogs: string[] = [];
-  isGameStarted: boolean = false;
-  showLevelUp: boolean = false;
 
-  constructor(private cdr: ChangeDetectorRef, private analytics: Analytics) {}
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private analytics: Analytics,
+    public gameManager: GameManagerService
+  ) {}
 
   restartGame(): void {
-    // Stop any running animations and intervals
     this.stopAllIntervals();
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
     }
-
-    // Reset game state
-    this.score = 0;
-    this.level = 1;
-    this.progress = 0;
-    this.isGameOver = false;
     this.consoleLogs = [];
     this.particles = [];
     this.fogSpots = [];
@@ -206,45 +108,17 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     this.comboKeyTimestamps = [];
     this.mobileTapTimestamps = [];
     this.comboText = null;
-    this.comboPulseActive = false;
     this.currentProgressBarGradient = GAME_CONFIG.progressBarGradients[0];
-
     this.lastTouchCount = 0;
-    // Re-initialize particles and restart the animation loop
     this.initializeParticles();
     this.animate();
-
-    // Directly start the countdown for the new game
-    this.startGame();
+    this.gameManager.restartGame();
   }
 
   startGame(): void {
-    this.countdownValue = '3';
-    this.cdr.markForCheck();
-
-    setTimeout(() => {
-      this.countdownValue = '2';
-      this.cdr.markForCheck();
-    }, 1000);
-
-    setTimeout(() => {
-      this.countdownValue = '1';
-      this.cdr.markForCheck();
-    }, 2000);
-
-    setTimeout(() => {
-      this.countdownValue = 'GO!';
-      this.cdr.markForCheck();
-    }, 3000);
-
-    setTimeout(() => {
-      this.countdownValue = null;
-      this.isGameStarted = true;
-      this.logToConsole('Game Started!');
-      this.startGameTimer();
-      this.updateProgressTarget();
-      this.startCooldownDecay();
-    }, 4000);
+    this.gameManager.startGame();
+    this.startCooldownDecay();
+    this.logToConsole('Game Started!');
   }
 
   getProgressBarGradient(): string {
@@ -283,13 +157,15 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('mousedown', ['$event'])
   onMouseDown(event: MouseEvent) {
-    if (this.isGameOver || !this.isGameStarted) return;
+    if (this.gameManager.isGameOver() || !this.gameManager.isGameStarted())
+      return;
     this.handleInteraction(event.clientX, event.clientY);
   }
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(event: TouchEvent) {
-    if (this.isGameOver || !this.isGameStarted) return;
+    if (this.gameManager.isGameOver() || !this.gameManager.isGameStarted())
+      return;
     event.preventDefault(); // Prevents firing mouse events as well
 
     const currentTouchCount = event.touches.length;
@@ -315,7 +191,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
-    if (this.isGameOver || !this.isGameStarted) return;
+    if (this.gameManager.isGameOver() || !this.gameManager.isGameStarted())
+      return;
 
     if (
       event.key === 'Meta' ||
@@ -422,7 +299,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     this.logToConsole(`High Strike! Combo: '${comboIdentifier}'`);
     logEvent(this.analytics, 'high_strike_combo', {
       combo_keys: comboIdentifier,
-      level: this.level,
+      level: this.gameManager.level(),
     });
     this.playRandomComboSound();
 
@@ -431,25 +308,21 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
       const timeBonus = Math.max(
         timerConfig.comboBonusMin,
         timerConfig.comboBonusBase -
-          (this.level - 1) * timerConfig.comboBonusDecay
+          (this.gameManager.level() - 1) * timerConfig.comboBonusDecay
       );
-      this.timer += timeBonus;
+      this.gameManager.addTime(timeBonus);
       this.logToConsole(`Lucky! +${timeBonus.toFixed(2)}s time bonus!`);
     }
 
-    this.comboPulseActive = true;
-    setTimeout(() => {
-      this.comboPulseActive = false;
-    }, 200);
-    this.progress += GAME_CONFIG.explosion.types.highStrike.score;
-    this.updateProgress();
+    this.gameManager.addScore(GAME_CONFIG.explosion.types.highStrike.score);
     this.lastPressTimes.set(comboIdentifier, currentTime);
     this.comboKeyTimestamps = [];
     this.activeKeys.clear(); // Consume the keys
   }
 
   private processInput(identifier: string, x: number, y: number) {
-    if (this.isGameOver || !this.isGameStarted) return;
+    if (this.gameManager.isGameOver() || !this.gameManager.isGameStarted())
+      return;
 
     const currentTime = Date.now();
     // Global rapid-fire prevention
@@ -500,13 +373,13 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     }
 
     this.triggerEffect(x, y, explosionType);
-    this.progress += progressIncrement;
-    this.updateProgress();
+    this.gameManager.addScore(progressIncrement);
   }
 
   @HostListener('window:keyup', ['$event'])
   onKeyUp(event: KeyboardEvent) {
-    if (this.isGameOver || !this.isGameStarted) return;
+    if (this.gameManager.isGameOver() || !this.gameManager.isGameStarted())
+      return;
 
     if (
       event.key === 'Meta' ||
@@ -803,18 +676,6 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private startGameTimer() {
-    this.timer = GAME_CONFIG.timer.initialSeconds;
-    this.gameTimerInterval = window.setInterval(() => {
-      this.timer--;
-      if (this.timer <= 0) {
-        this.timer = 0;
-        this.gameOver();
-      }
-      this.cdr.markForCheck(); // Manually trigger change detection for the timer
-    }, 1000);
-  }
-
   private startCooldownDecay() {
     const { keyFatigue } = GAME_CONFIG;
     this.cooldownDecayInterval = window.setInterval(() => {
@@ -829,44 +690,6 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         }
       }
     }, keyFatigue.cooldownDecayIntervalMs);
-  }
-
-  private updateProgress() {
-    while (this.progress >= this.progressTarget) {
-      this.progress -= this.progressTarget;
-      this.timer += GAME_CONFIG.timer.bonusSecondsPerLevel;
-      this.score += 10 * this.level;
-      this.level++;
-      this.currentProgressBarGradient =
-        GAME_CONFIG.progressBarGradients[
-          (this.level - 1) % GAME_CONFIG.progressBarGradients.length
-        ];
-      this.updateProgressTarget();
-
-      this.showLevelUp = true; // This will re-trigger the animation
-      this.cdr.detectChanges(); // Manually trigger change detection for the animation
-      setTimeout(() => {
-        this.showLevelUp = false;
-      }, GAME_CONFIG.levelNotificationDurationMs);
-    }
-  }
-
-  private gameOver() {
-    this.isGameOver = true;
-    this.logToConsole(`Game Over! Final Score: ${this.score}`);
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-    }
-    this.stopAllIntervals(); // This now includes the timer
-    if (this.gameTimerInterval) clearInterval(this.gameTimerInterval);
-  }
-
-  private updateProgressTarget() {
-    const { difficulty } = GAME_CONFIG;
-    this.progressTarget =
-      difficulty.levelTargetBase +
-      Math.pow(this.level, difficulty.levelTargetExponent) *
-        difficulty.levelTargetMultiplier;
   }
 
   private updateParticles() {
