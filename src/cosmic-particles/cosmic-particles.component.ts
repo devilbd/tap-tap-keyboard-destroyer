@@ -394,6 +394,20 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         event.stopPropagation();
     }
 
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        // Show a confirmation prompt if a game is in progress.
+        if (
+            this.gameManager.isGameStarted() &&
+            !this.gameManager.isGameOver()
+        ) {
+            // This is the standard way to trigger the browser's confirmation dialog.
+            event.preventDefault();
+            event.returnValue =
+                'Are you sure you want to leave? Your game progress will be lost.';
+        }
+    }
+
     triggerCrushBooster(event?: Event) {
         event?.preventDefault();
         this._triggerCrushBooster();
