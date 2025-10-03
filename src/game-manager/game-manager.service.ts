@@ -194,7 +194,7 @@ export class GameManagerService {
         if (this.isUltimateReady()) return;
         this.ultimateComboCounter.update((c) => c + amount);
         if (!this.isBlackHoleActive()) {
-            this.blackHoleComboCounter.update((c) => c + 1);
+            this.blackHoleComboCounter.update((c) => c + amount);
             if (
                 this.blackHoleComboCounter() >=
                 GAME_CONFIG.blackHole.comboThreshold
