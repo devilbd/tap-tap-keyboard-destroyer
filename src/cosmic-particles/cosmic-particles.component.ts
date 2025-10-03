@@ -128,9 +128,9 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     readonly segments = Array(40);
     readonly segmentRotation = 360 / this.segments.length;
 
-    crushBoosterButtonText = 'USE BOOSTER';
-    timeBoosterButtonText = 'USE TIME BOOSTER';
-    alienCleanerButtonText = 'USE ALIEN CLEANER';
+    crushBoosterButtonText = 'BOOSTER';
+    timeBoosterButtonText = 'TIME BOOSTER';
+    alienCleanerButtonText = 'ALIEN CLEANER';
     ultimateButtonText = 'ULTIMATE';
 
     get timeBoosterKey(): string {
@@ -1506,7 +1506,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 crushCooldownRemaining / 1000
             ).toFixed(1)}s`;
         } else {
-            this.crushBoosterButtonText = 'USE BOOSTER';
+            this.crushBoosterButtonText = 'BOOSTER';
         }
 
         // Time Booster
@@ -1517,7 +1517,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 timeCooldownRemaining / 1000
             ).toFixed(1)}s`;
         } else {
-            this.timeBoosterButtonText = 'USE TIME BOOSTER';
+            this.timeBoosterButtonText = 'TIME BOOSTER';
         }
 
         // Ultimate
@@ -1539,7 +1539,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 alienCleanerCooldownRemaining / 1000
             ).toFixed(1)}s`;
         } else {
-            this.alienCleanerButtonText = 'USE ALIEN CLEANER';
+            this.alienCleanerButtonText = 'ALIEN CLEANER';
         }
 
         this.cdr.markForCheck();

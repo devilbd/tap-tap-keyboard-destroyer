@@ -22,9 +22,11 @@ export class GameManagerService {
     // Game State as Signals
     crushKeys: WritableSignal<number> = signal(0);
     sessionScore = signal(0);
+    alienScoreConsumption = signal(0);
     finalSessionScore = signal(0);
     comboStats = signal<Map<string, number>>(new Map());
     finalComboStats = signal<Map<string, number>>(new Map());
+    finalAlienScoreConsumption = signal(0);
     ultimateComboCounter = signal(0);
     isUltimateReady = computed(
         () => this.ultimateComboCounter() >= GAME_CONFIG.ultimateThreshold
@@ -228,7 +230,14 @@ export class GameManagerService {
 
         // Alien eats score while active
         this.alienScoreInterval = window.setInterval(() => {
-            this.sessionScore.update((s) => Math.max(0, s - 100));
+            const scoreToDrain = 100;
+            this.sessionScore.update((s) => {
+                const actualDrained = Math.min(s, scoreToDrain);
+                if (actualDrained > 0) {
+                    this.alienScoreConsumption.update((c) => c + actualDrained);
+                }
+                return s - actualDrained;
+            });
         }, 1000);
 
         // Alien disappears after 10 seconds
@@ -270,6 +279,7 @@ export class GameManagerService {
         this.isGameOver.set(false);
         this.level.set(1);
         this.sessionScore.set(0);
+        this.alienScoreConsumption.set(0);
         this.progress.set(0);
         this.updateProgressTarget();
         this.ultimateComboCounter.set(0);
@@ -386,6 +396,7 @@ export class GameManagerService {
         this.isGameStarted.set(false);
         this.finalSessionScore.set(this.sessionScore());
         this.finalComboStats.set(new Map(this.comboStats()));
+        this.finalAlienScoreConsumption.set(this.alienScoreConsumption());
         this.crushKeys.update((current) => current + this.sessionScore());
         this.stopGameTimer();
     }

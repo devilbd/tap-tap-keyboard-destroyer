@@ -32,7 +32,7 @@
     <button
         class="booster-button"
         (click)="triggerCrushBooster($event)"
-        [disabled]="crushBoosterButtonText !== 'USE BOOSTER'"
+        [disabled]="crushBoosterButtonText !== 'BOOSTER'"
     >
         <span class="booster-key">1</span> {{ crushBoosterButtonText }}
     </button>
@@ -40,7 +40,7 @@
     <button
         class="booster-button time-booster-button"
         (click)="triggerTimeBooster($event)"
-        [disabled]="timeBoosterButtonText !== 'USE TIME BOOSTER'"
+        [disabled]="timeBoosterButtonText !== 'TIME BOOSTER'"
     >
         <span class="booster-key">{{ timeBoosterKey }}</span>
         {{ timeBoosterButtonText }}
@@ -51,7 +51,7 @@
         (click)="triggerAlienCleaner($event)"
         [disabled]="
             !gameManager.isAlienActive() ||
-            alienCleanerButtonText !== 'USE ALIEN CLEANER'
+            alienCleanerButtonText !== 'ALIEN CLEANER'
         "
     >
         <span class="booster-key">{{ alienCleanerKey }}</span>
@@ -109,6 +109,10 @@
     <div class="summary-container">
         <div class="final-score-text">
             SESSION SCORE: {{ gameManager.finalSessionScore() | number }}
+        </div>
+        <div class="alien-consumption-text">
+            ALIEN CONSUMPTION:
+            {{ gameManager.finalAlienScoreConsumption() | number }}
         </div>
         @if(gameManager.finalComboStats().size > 0) {
         <div class="combo-stats">

@@ -448,6 +448,16 @@ canvas {
     text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
 }
 
+.alien-consumption-text {
+    margin-top: 10px;
+    font-family: "KaBlam", Impact, sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: #00e075; /* Toxic Green */
+    -webkit-text-stroke: 2px black;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
+}
+
 .summary-container {
     background: rgba(0, 0, 0, 0.6);
     padding: 20px 40px;
@@ -520,6 +530,10 @@ canvas {
     .final-score-text {
         font-size: 32px;
         text-align: center;
+    }
+
+    .alien-consumption-text {
+        font-size: 22px;
     }
 
     .booster-button-container {
