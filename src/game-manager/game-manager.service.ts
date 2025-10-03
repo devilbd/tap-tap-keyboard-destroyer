@@ -135,7 +135,7 @@ export class GameManagerService {
     }
 
     addScore(points: number) {
-        if (this.isGameOver()) return;
+        if (this.isGameOver() || this.isAlienActive()) return;
         this.sessionScore.update((current) => current + points);
         this.progress.update((current) => current + points);
         this.lastHitTime.set(Date.now());
