@@ -354,6 +354,12 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.lastTouchCount = event.touches.length;
     }
 
+    @HostListener('touchmove', ['$event'])
+    onTouchMove(event: TouchEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     triggerCrushBooster(event?: Event) {
         event?.preventDefault();
         this._triggerCrushBooster();
