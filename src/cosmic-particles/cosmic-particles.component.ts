@@ -121,8 +121,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     comboText: { text: string; style: any } | null = null;
     currentProgressBarGradient = GAME_CONFIG.progressBarGradients[0];
 
-    readonly progressRadius = 52;
-    readonly progressCircumference = 2 * Math.PI * this.progressRadius;
+    readonly segments = Array(40);
+    readonly segmentRotation = 360 / this.segments.length;
 
     crushBoosterButtonText = 'USE BOOSTER';
     timeBoosterButtonText = 'USE TIME BOOSTER';
@@ -228,6 +228,14 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
     getProgressBarGradient(): string {
         return this.currentProgressBarGradient;
+    }
+
+    isSegmentActive(index: number): boolean {
+        const percent =
+            (this.gameManager.progress() / this.gameManager.progressTarget()) *
+            100;
+        const activeSegmentPercent = ((index + 1) / this.segments.length) * 100;
+        return activeSegmentPercent <= percent;
     }
 
     ngAfterViewInit() {
@@ -444,6 +452,14 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 keyCount > 0
                     ? totalY / keyCount
                     : this.canvasRef.nativeElement.height / 2;
+            // Use the calculated coordinates for the rest of the function
+            x = comboX;
+            y = comboY;
+            this.triggerEffect(
+                comboX,
+                comboY,
+                GAME_CONFIG.explosion.types.highStrike
+            );
 
             this.consumeParticlesAt(comboX, comboY);
         }
@@ -461,7 +477,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         const comboX = x ?? width / 2;
         const comboY = y ?? height / 2;
         const comboText = this.triggerComboText(comboX, comboY);
-        this.consumeParticlesAt(comboX, comboY);
+
         this.nudgeWarpGate(comboX, comboY);
         this.gameManager.recordCombo(comboText);
         this.gameManager.recordBigCombo();
@@ -695,11 +711,16 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 const x = Math.random() * width;
                 const y = Math.random() * height;
 
-                // Trigger visual effects at random points. This was the missing piece.
+                // Trigger all effects for the ultimate
                 this.triggerEffect(
                     x,
                     y,
                     GAME_CONFIG.explosion.types.highStrike
+                );
+                this.triggerComboText(x, y);
+                this.playRandomComboSound();
+                this.gameManager.addScore(
+                    GAME_CONFIG.explosion.types.highStrike.score
                 );
             }, i * 50); // A faster 50ms delay between each combo
         }
@@ -966,6 +987,11 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             particleCount *= 1 - Math.min(loadFactor, 1) * 0.75; // Reduce by up to 75%
         }
 
+        // Ensure particleCount is an integer and at least 1 for small scores.
+        particleCount = Math.floor(particleCount);
+        if (explosionType.score > 0 && particleCount === 0) {
+            particleCount = 1;
+        }
         for (let i = 0; i < particleCount; i++) {
             this.particles.push(
                 this.createExplosionParticle(x, y, explosionType)

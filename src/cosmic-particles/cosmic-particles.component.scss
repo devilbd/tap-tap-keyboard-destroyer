@@ -241,32 +241,41 @@ canvas {
 .progress-container {
     position: fixed;
     bottom: 40px;
-    left: 10px;
+    left: 50px;
     z-index: 1000;
     display: flex;
-    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
 }
 
 .progress-ring {
     position: relative;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg); /* Start from the top */
 }
 
-.progress-ring__circle,
-.progress-ring__circle-bg {
-    transition: 0.35s stroke-dashoffset;
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-    stroke-linecap: round;
-}
+.progress-segment {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 
-.progress-ring__circle-bg {
-    stroke: #333;
-}
-
-.progress-ring__circle {
-    stroke: #00ffff;
-    filter: drop-shadow(0 0 5px #00ffff);
+    &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px; /* Width of the segment */
+        height: 12px; /* Length of the segment */
+        background-color: #333; /* Inactive color */
+        border-radius: 2px;
+        transition: background-color 0.2s ease;
+    }
 }
 
 .progress-text {
@@ -280,6 +289,11 @@ canvas {
     font-weight: 900;
     -webkit-text-stroke: 2px black;
     pointer-events: none;
+}
+
+.progress-segment.active::before {
+    background-color: #00ffff;
+    box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
 }
 
 .level-up-overlay {
