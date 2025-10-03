@@ -30,8 +30,8 @@ export class GameManagerService {
     );
     blackHoleComboCounter = signal(0);
     blackHoleComboThreshold = GAME_CONFIG.blackHole.comboThreshold;
-    isBlackHoleActive = signal(false);
     boosters: WritableSignal<number> = signal(0);
+    activeBlackHoles = signal(0);
     timeBoosters: WritableSignal<number> = signal(0);
     level = signal(1);
     progress = signal(0);
@@ -41,6 +41,8 @@ export class GameManagerService {
     isGameStarted = signal(false);
     showLevelUp = signal(false);
     countdownValue: WritableSignal<string | null> = signal(null);
+
+    isBlackHoleActive = computed(() => this.activeBlackHoles() > 0);
 
     private gameTimerInterval: number | undefined;
     private isBrowser = false;
@@ -158,9 +160,21 @@ export class GameManagerService {
                 this.blackHoleComboCounter() >=
                 GAME_CONFIG.blackHole.comboThreshold
             ) {
-                this.isBlackHoleActive.set(true);
+                const rand = Math.random();
+                let numBlackHoles = 1;
+                // 60% for 1, 25% for 2, 10% for 3, 5% for 4
+                if (rand < 0.05) {
+                    numBlackHoles = 4;
+                } else if (rand < 0.15) {
+                    numBlackHoles = 3;
+                } else if (rand < 0.4) {
+                    numBlackHoles = 2;
+                }
+
+                this.activeBlackHoles.set(numBlackHoles);
+
                 setTimeout(() => {
-                    this.isBlackHoleActive.set(false);
+                    this.activeBlackHoles.set(0);
                     this.blackHoleComboCounter.set(0);
                 }, GAME_CONFIG.blackHole.durationMs);
             }
@@ -190,6 +204,7 @@ export class GameManagerService {
         this.progress.set(0);
         this.updateProgressTarget();
         this.ultimateComboCounter.set(0);
+        this.activeBlackHoles.set(0);
         this.blackHoleComboCounter.set(0);
         this.comboStats.set(new Map());
 

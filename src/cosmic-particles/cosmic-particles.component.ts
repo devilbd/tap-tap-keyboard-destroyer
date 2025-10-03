@@ -5,6 +5,7 @@ import {
     AfterViewInit,
     OnDestroy,
     HostListener,
+    effect,
     ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -93,7 +94,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private particles: Particle[] = [];
     private fogSpots: FogSpot[] = [];
     private stripes: Stripe[] = [];
-    private warpGate!: WarpGate;
+    private warpGates: WarpGate[] = [];
     private accretionDiskAngle = 0;
     private vortexAngle = 0;
     private animationId = 0;
@@ -117,7 +118,15 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         private cdr: ChangeDetectorRef,
         private analytics: Analytics,
         public gameManager: GameManagerService
-    ) {}
+    ) {
+        effect(() => {
+            const numBlackHoles = this.gameManager.activeBlackHoles();
+            this.warpGates = []; // Clear existing black holes
+            for (let i = 0; i < numBlackHoles; i++) {
+                this.warpGates.push(this.createWarpGate());
+            }
+        });
+    }
 
     restartGame(): void {
         this.stopAllIntervals();
@@ -128,7 +137,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.particles = [];
         this.fogSpots = [];
         this.stripes = [];
-        this.initializeWarpGate();
+        this.warpGates = [];
         this.keyCooldowns.clear();
         this.lastPressTimes.clear();
         this.activeKeys.clear();
@@ -169,7 +178,6 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.resizeCanvas();
         this.initializeParticles();
         this.initializeStripes();
-        this.initializeWarpGate();
         this.animate();
         this.addPunctuationStyles();
         this.initializeKeyboardMatrix();
@@ -193,7 +201,6 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.resizeCanvas();
         this.initializeKeyboardMatrix();
         this.initializeStripes();
-        this.initializeWarpGate();
     }
 
     @HostListener('mousedown', ['$event'])
@@ -614,25 +621,27 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         const maxVelocity = 3; // Prevent it from moving too fast
         if (!this.gameManager.isBlackHoleActive()) return;
 
-        const dx = targetX - this.warpGate.x;
-        const dy = targetY - this.warpGate.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        this.warpGates.forEach((gate) => {
+            const dx = targetX - gate.x;
+            const dy = targetY - gate.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance > 1) {
-            // Add a velocity component towards the combo
-            this.warpGate.vx += (dx / distance) * nudgeStrength;
-            this.warpGate.vy += (dy / distance) * nudgeStrength;
+            if (distance > 1) {
+                // Add a velocity component towards the combo
+                gate.vx += (dx / distance) * nudgeStrength;
+                gate.vy += (dy / distance) * nudgeStrength;
 
-            // Clamp the velocity to the max speed
-            this.warpGate.vx = Math.max(
-                -maxVelocity,
-                Math.min(maxVelocity, this.warpGate.vx)
-            );
-            this.warpGate.vy = Math.max(
-                -maxVelocity,
-                Math.min(maxVelocity, this.warpGate.vy)
-            );
-        }
+                // Clamp the velocity to the max speed
+                gate.vx = Math.max(
+                    -maxVelocity,
+                    Math.min(maxVelocity, gate.vx)
+                );
+                gate.vy = Math.max(
+                    -maxVelocity,
+                    Math.min(maxVelocity, gate.vy)
+                );
+            }
+        });
     }
 
     private consumeParticlesAt(x: number, y: number) {
@@ -771,9 +780,9 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         }
     }
 
-    private initializeWarpGate() {
+    private createWarpGate(): WarpGate {
         const canvas = this.canvasRef.nativeElement;
-        this.warpGate = {
+        return {
             x: canvas.width / 2,
             y: canvas.height / 2,
             radius: 50, // Make the black hole smaller
@@ -948,49 +957,57 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
     private updateWarpGate() {
         if (!this.gameManager.isBlackHoleActive()) return;
-        const canvas = this.canvasRef.nativeElement;
-        const gate = this.warpGate;
+        this.warpGates.forEach((gate) => {
+            const canvas = this.canvasRef.nativeElement;
 
-        gate.x += gate.vx;
-        gate.y += gate.vy;
+            gate.x += gate.vx;
+            gate.y += gate.vy;
 
-        // Ensure the entire rectangle stays within the canvas bounds
-        if (gate.x - gate.radius < 0) {
-            gate.x = gate.radius;
-            gate.vx *= -1;
-        } else if (gate.x + gate.radius > canvas.width) {
-            gate.x = canvas.width - gate.radius;
-            gate.vx *= -1;
-        }
-        if (gate.y - gate.radius < 0) {
-            gate.y = gate.radius;
-            gate.vy *= -1;
-        } else if (gate.y + gate.radius > canvas.height) {
-            gate.y = canvas.height - gate.radius;
-            gate.vy *= -1;
-        }
+            // Ensure the entire rectangle stays within the canvas bounds
+            if (gate.x - gate.radius < 0) {
+                gate.x = gate.radius;
+                gate.vx *= -1;
+            } else if (gate.x + gate.radius > canvas.width) {
+                gate.x = canvas.width - gate.radius;
+                gate.vx *= -1;
+            }
+            if (gate.y - gate.radius < 0) {
+                gate.y = gate.radius;
+                gate.vy *= -1;
+            } else if (gate.y + gate.radius > canvas.height) {
+                gate.y = canvas.height - gate.radius;
+                gate.vy *= -1;
+            }
+        });
     }
 
     private updateStripes() {
         if (!this.gameManager.isBlackHoleActive()) return;
-        const canvas = this.canvasRef.nativeElement;
-        this.stripes.forEach((stripe) => {
-            stripe.angle += stripe.speed;
-            // Slowly pull stripes towards the warp gate
-            stripe.radius -= 0.05;
-            if (stripe.radius < 0)
-                stripe.radius = Math.max(canvas.width, canvas.height) / 2;
+        this.warpGates.forEach((gate) => {
+            const canvas = this.canvasRef.nativeElement;
+            this.stripes.forEach((stripe) => {
+                stripe.angle += stripe.speed;
+                // Slowly pull stripes towards the warp gate
+                stripe.radius -= 0.05;
+                if (stripe.radius < 0)
+                    stripe.radius = Math.max(canvas.width, canvas.height) / 2;
+            });
         });
     }
 
     private updateParticles() {
         this.particles = this.particles.filter((particle) => {
             // Add gravitational pull from the warp gate for cosmic particles
-            if (particle.vz === 0 && this.gameManager.isBlackHoleActive()) {
-                const dx = this.warpGate.x - particle.x;
-                const dy = this.warpGate.y - particle.y;
+            if (
+                particle.vz === 0 &&
+                this.gameManager.isBlackHoleActive() &&
+                this.warpGates.length > 0
+            ) {
+                const gate = this.warpGates[0]; // For simplicity, all particles are pulled by the first black hole.
+                const dx = gate.x - particle.x;
+                const dy = gate.y - particle.y;
                 const distSq = dx * dx + dy * dy;
-                const pullRadius = this.warpGate.radius * 3;
+                const pullRadius = gate.radius * 3;
 
                 if (particle.life < 0) {
                     // This particle is being consumed by a combo, accelerate its demise
@@ -998,7 +1015,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                     particle.alpha = Math.max(0, 1 + particle.life * 10);
                 }
                 // If inside the event horizon, consume the particle
-                if (distSq < this.warpGate.radius * this.warpGate.radius) {
+                if (distSq < gate.radius * gate.radius) {
                     particle.life = 0; // Mark for removal
                 } else if (distSq < pullRadius * pullRadius) {
                     // If within the gravitational pull area, affect its velocity
@@ -1164,64 +1181,75 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
     private drawStripes() {
         if (!this.gameManager.isBlackHoleActive()) return;
-        const { x, y, radius } = this.warpGate;
+        this.warpGates.forEach((gate) => {
+            const { x, y, radius } = gate;
 
-        this.ctx.save();
-        // Create a clipping region for the "hole"
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
-        this.ctx.clip();
-
-        // Clear the inside of the hole to create the void effect
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        this.ctx.restore();
-
-        // Draw the vortex, which will now have a hole in it
-        this.ctx.save();
-        this.ctx.translate(x, y);
-        this.ctx.rotate(this.vortexAngle);
-        this.stripes.forEach((stripe) => {
+            this.ctx.save();
+            // Create a clipping region for the "hole"
             this.ctx.beginPath();
-            this.ctx.arc(
+            this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+            this.ctx.clip();
+
+            // Clear the inside of the hole to create the void effect
+            this.ctx.clearRect(
                 0,
                 0,
-                stripe.radius,
-                stripe.angle,
-                stripe.angle + stripe.length
+                this.ctx.canvas.width,
+                this.ctx.canvas.height
             );
-            // Make stripes more colorful
-            const hue = (stripe.angle * 30) % 360;
-            this.ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${stripe.alpha})`;
-            this.ctx.lineWidth = stripe.width;
-            this.ctx.stroke();
+            this.ctx.restore();
+
+            // Draw the vortex, which will now have a hole in it
+            this.ctx.save();
+            this.ctx.translate(x, y);
+            this.ctx.rotate(this.vortexAngle);
+            this.stripes.forEach((stripe) => {
+                this.ctx.beginPath();
+                this.ctx.arc(
+                    0,
+                    0,
+                    stripe.radius,
+                    stripe.angle,
+                    stripe.angle + stripe.length
+                );
+                // Make stripes more colorful
+                const hue = (stripe.angle * 30) % 360;
+                this.ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${stripe.alpha})`;
+                this.ctx.lineWidth = stripe.width;
+                this.ctx.stroke();
+            });
+            this.ctx.restore();
         });
-        this.ctx.restore();
     }
 
     private drawAccretionDisk() {
         if (!this.gameManager.isBlackHoleActive()) return;
-        const { x, y, radius } = this.warpGate;
-        this.ctx.save();
-        this.ctx.translate(x, y);
+        this.warpGates.forEach((gate) => {
+            const { x, y, radius } = gate;
+            this.ctx.save();
+            this.ctx.translate(x, y);
 
-        const ringCount = 3;
-        const ringSpacing = 15;
+            const ringCount = 3;
+            const ringSpacing = 15;
 
-        for (let i = 0; i < ringCount; i++) {
-            this.ctx.beginPath();
-            // Each ring gets its own speed multiplier.
-            const speedMultiplier = 1 + i * 0.5;
-            const startAngle = this.accretionDiskAngle * speedMultiplier;
-            // The end angle determines the length of the arc.
-            const endAngle = startAngle + Math.PI * 1.5;
-            const ringRadius = radius + 5 + i * ringSpacing;
-            this.ctx.arc(0, 0, ringRadius, startAngle, endAngle);
-            // Make the rings more transparent for a subtler effect.
-            this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 + i * 0.03})`;
-            this.ctx.lineWidth = 1 + i * 0.5;
-            this.ctx.stroke();
-        }
-        this.ctx.restore();
+            for (let i = 0; i < ringCount; i++) {
+                this.ctx.beginPath();
+                // Each ring gets its own speed multiplier.
+                const speedMultiplier = 1 + i * 0.5;
+                const startAngle = this.accretionDiskAngle * speedMultiplier;
+                // The end angle determines the length of the arc.
+                const endAngle = startAngle + Math.PI * 1.5;
+                const ringRadius = radius + 5 + i * ringSpacing;
+                this.ctx.arc(0, 0, ringRadius, startAngle, endAngle);
+                // Make the rings more transparent for a subtler effect.
+                this.ctx.strokeStyle = `rgba(255, 255, 255, ${
+                    0.05 + i * 0.03
+                })`;
+                this.ctx.lineWidth = 1 + i * 0.5;
+                this.ctx.stroke();
+            }
+            this.ctx.restore();
+        });
     }
 
     private animate() {
