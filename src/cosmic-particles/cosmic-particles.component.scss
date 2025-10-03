@@ -210,17 +210,17 @@ canvas {
     box-shadow: 0 0 15px #ff0000;
 }
 
-.ultimate-button:disabled {
+.booster-button:disabled {
     background: #555;
     color: #999;
     -webkit-text-stroke: 1px black;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
-}
 
-.ultimate-button:disabled .booster-key {
-    border-color: #333;
+    .booster-key {
+        border-color: #333;
+    }
 }
 
 .level-display {

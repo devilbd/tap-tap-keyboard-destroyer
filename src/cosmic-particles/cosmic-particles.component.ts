@@ -99,6 +99,10 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private vortexAngle = 0;
     private animationId = 0;
     private lastKeyPressTime = 0;
+    private lastCrushBoosterTime = 0;
+    private lastTimeBoosterTime = 0;
+    private lastUltimateTime = 0;
+    private readonly boosterCooldown = 5000; // 5 seconds
     private keyCooldowns: Map<string, number> = new Map();
     private lastPressTimes: Map<string, number> = new Map();
     private activeKeys: Set<string> = new Set();
@@ -110,6 +114,10 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private lastTouchCount = 0;
     comboText: { text: string; style: any } | null = null;
     currentProgressBarGradient = GAME_CONFIG.progressBarGradients[0];
+
+    crushBoosterButtonText = 'USE BOOSTER';
+    timeBoosterButtonText = 'USE TIME BOOSTER';
+    ultimateButtonText = 'ULTIMATE';
 
     consoleLogs: string[] = [];
     gameVersion = packageInfo.version;
@@ -237,48 +245,36 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.lastTouchCount = event.touches.length;
     }
 
-    onBoosterButtonClick() {
-        this.triggerCrushBooster();
+    triggerCrushBooster(event?: Event) {
+        event?.preventDefault();
+        this._triggerCrushBooster();
     }
 
-    onBoosterButtonTouch(event: Event) {
-        event.preventDefault();
-        this.triggerCrushBooster();
+    triggerTimeBooster(event?: Event) {
+        event?.preventDefault();
+        this._triggerTimeBooster();
     }
 
-    onTimeBoosterButtonTouch(event: Event) {
-        event.preventDefault();
-        this.triggerTimeBooster();
-    }
-
-    onUltimateButtonTouch(event: Event) {
-        event.preventDefault();
-        this.triggerUltimate();
-    }
-
-    onTimeBoosterButtonClick() {
-        this.triggerTimeBooster();
-    }
-
-    onUltimateButtonClick() {
-        this.triggerUltimate();
+    triggerUltimate(event?: Event) {
+        event?.preventDefault();
+        this._triggerUltimate();
     }
 
     @HostListener('window:keydown', ['$event'])
     onKeyDown(event: KeyboardEvent) {
         if (event.key === 'Enter' || event.key === '1') {
             event.preventDefault();
-            this.triggerCrushBooster();
+            this._triggerCrushBooster();
             return;
         }
         if (event.key === '2') {
             event.preventDefault();
-            this.triggerTimeBooster();
+            this._triggerTimeBooster();
             return;
         }
         if (event.key === '3') {
             event.preventDefault();
-            this.triggerUltimate();
+            this._triggerUltimate();
             return;
         }
         // Prevent default browser actions for other number keys if needed
@@ -544,7 +540,13 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.lastPressTimes.set(comboIdentifier, currentTime);
     }
 
-    private triggerCrushBooster() {
+    private _triggerCrushBooster() {
+        const now = Date.now();
+        if (now - this.lastCrushBoosterTime < this.boosterCooldown) {
+            this.logToConsole('CRUSH BOOSTER on cooldown.');
+            return;
+        }
+
         if (
             this.gameManager.isGameOver() ||
             !this.gameManager.isGameStarted() ||
@@ -552,6 +554,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         ) {
             return;
         }
+        this.lastCrushBoosterTime = now;
 
         this.logToConsole('CRUSH BOOSTER ACTIVATED!');
 
@@ -565,7 +568,13 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         }
     }
 
-    private triggerTimeBooster() {
+    private _triggerTimeBooster() {
+        const now = Date.now();
+        if (now - this.lastTimeBoosterTime < this.boosterCooldown) {
+            this.logToConsole('TIME BOOSTER on cooldown.');
+            return;
+        }
+
         if (
             this.gameManager.isGameOver() ||
             !this.gameManager.isGameStarted() ||
@@ -573,12 +582,19 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         ) {
             return;
         }
+        this.lastTimeBoosterTime = now;
 
         this.gameManager.addTime(15);
         this.logToConsole('TIME BOOSTER ACTIVATED! +15s');
     }
 
-    private triggerUltimate() {
+    private _triggerUltimate() {
+        const now = Date.now();
+        if (now - this.lastUltimateTime < this.boosterCooldown) {
+            this.logToConsole('ULTIMATE on cooldown.');
+            return;
+        }
+
         if (
             this.gameManager.isGameOver() ||
             !this.gameManager.isGameStarted() ||
@@ -586,6 +602,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         ) {
             return;
         }
+        this.lastUltimateTime = now;
 
         this.logToConsole('ULTIMATE ACTIVATED!');
 
@@ -1252,6 +1269,45 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         });
     }
 
+    private updateCooldowns() {
+        const now = Date.now();
+
+        // Crush Booster
+        const crushCooldownRemaining =
+            this.lastCrushBoosterTime + this.boosterCooldown - now;
+        if (crushCooldownRemaining > 0) {
+            this.crushBoosterButtonText = `COOLDOWN: ${(
+                crushCooldownRemaining / 1000
+            ).toFixed(1)}s`;
+        } else {
+            this.crushBoosterButtonText = 'USE BOOSTER';
+        }
+
+        // Time Booster
+        const timeCooldownRemaining =
+            this.lastTimeBoosterTime + this.boosterCooldown - now;
+        if (timeCooldownRemaining > 0) {
+            this.timeBoosterButtonText = `COOLDOWN: ${(
+                timeCooldownRemaining / 1000
+            ).toFixed(1)}s`;
+        } else {
+            this.timeBoosterButtonText = 'USE TIME BOOSTER';
+        }
+
+        // Ultimate
+        const ultimateCooldownRemaining =
+            this.lastUltimateTime + this.boosterCooldown - now;
+        if (ultimateCooldownRemaining > 0) {
+            this.ultimateButtonText = `COOLDOWN: ${(
+                ultimateCooldownRemaining / 1000
+            ).toFixed(1)}s`;
+        } else {
+            this.ultimateButtonText = 'ULTIMATE';
+        }
+
+        this.cdr.markForCheck();
+    }
+
     private animate() {
         const canvas = this.canvasRef.nativeElement;
         this.ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
@@ -1262,6 +1318,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.updateWarpGate();
         this.updateStripes();
         this.updateParticles();
+        this.updateCooldowns();
 
         this.drawStripes();
         // Draw fog spots underneath the particles for a better depth effect

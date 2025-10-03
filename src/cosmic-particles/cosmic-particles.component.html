@@ -30,25 +30,26 @@
 <div class="booster-button-container">
     <button
         class="booster-button"
-        (click)="onBoosterButtonClick()"
-        (touchstart)="onBoosterButtonTouch($event)"
+        (click)="triggerCrushBooster($event)"
+        [disabled]="crushBoosterButtonText !== 'USE BOOSTER'"
     >
-        <span class="booster-key">1</span> USE BOOSTER
+        <span class="booster-key">1</span> {{ crushBoosterButtonText }}
     </button>
     <button
         class="booster-button time-booster-button"
-        (click)="onTimeBoosterButtonClick()"
-        (touchstart)="onTimeBoosterButtonTouch($event)"
+        (click)="triggerTimeBooster($event)"
+        [disabled]="timeBoosterButtonText !== 'USE TIME BOOSTER'"
     >
-        <span class="booster-key">2</span> USE TIME BOOSTER
+        <span class="booster-key">2</span> {{ timeBoosterButtonText }}
     </button>
     <button
         class="booster-button ultimate-button"
-        (click)="onUltimateButtonClick()"
-        (touchstart)="onUltimateButtonTouch($event)"
-        [disabled]="!gameManager.isUltimateReady()"
+        (click)="triggerUltimate($event)"
+        [disabled]="
+            !gameManager.isUltimateReady() || ultimateButtonText !== 'ULTIMATE'
+        "
     >
-        <span class="booster-key">3</span> ULTIMATE
+        <span class="booster-key">3</span> {{ ultimateButtonText }}
     </button>
 </div>
 <div class="timer-display">
