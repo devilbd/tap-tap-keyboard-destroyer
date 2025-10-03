@@ -14,7 +14,8 @@ import { RouterLink } from '@angular/router';
 import { GAME_CONFIG } from '../constants/game-config';
 import { GameManagerService } from '../game-manager/game-manager.service';
 import packageInfo from '../../package.json';
-import { SwUpdate } from '@angular/service-worker';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
+import { Subscription, filter, interval } from 'rxjs';
 
 const PERSPECTIVE = 500;
 const FOCAL_LENGTH = 500;
@@ -111,6 +112,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private cooldownDecayInterval: number | undefined;
     private keyboardMatrix: Map<string, KeyPosition> = new Map();
     private comboKeyTimestamps: number[] = [];
+    private swUpdateSubscription: Subscription | undefined;
+    private swCheckForUpdateSubscription: Subscription | undefined;
     private mobileTapTimestamps: number[] = [];
     private lastTouchCount = 0;
     comboText: { text: string; style: any } | null = null;
@@ -136,20 +139,30 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 this.warpGates.push(this.createWarpGate());
             }
         });
-        if (swUpdate.isEnabled) {
-            swUpdate.versionUpdates.subscribe((evt) => {
-                if (evt.type !== 'VERSION_READY') {
-                    return;
-                }
-                console.log('New version available. Reload to update.');
-                if (
-                    confirm(
-                        'A new version of the game is available. Load it now?'
+        if (this.swUpdate.isEnabled) {
+            // Check for updates every 6 hours.
+            this.swCheckForUpdateSubscription = interval(
+                6 * 60 * 60 * 1000
+            ).subscribe(() => this.swUpdate.checkForUpdate());
+
+            this.swUpdateSubscription = this.swUpdate.versionUpdates
+                .pipe(
+                    filter(
+                        (evt): evt is VersionReadyEvent =>
+                            evt.type === 'VERSION_READY'
                     )
-                ) {
-                    window.location.reload();
-                }
-            });
+                )
+                .subscribe(() => {
+                    if (
+                        confirm(
+                            'A new version of the game is available. Load it now?'
+                        )
+                    ) {
+                        this.swUpdate
+                            .activateUpdate()
+                            .then(() => document.location.reload());
+                    }
+                });
         }
     }
 
@@ -210,6 +223,12 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
     ngOnDestroy() {
         this.stopAllIntervals();
+        if (this.swUpdateSubscription) {
+            this.swUpdateSubscription.unsubscribe();
+        }
+        if (this.swCheckForUpdateSubscription) {
+            this.swCheckForUpdateSubscription.unsubscribe();
+        }
     }
 
     private stopAllIntervals() {
