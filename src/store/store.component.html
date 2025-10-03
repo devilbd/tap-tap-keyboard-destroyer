@@ -31,5 +31,18 @@
                 BUY
             </button>
         </div>
+        <div class="item-card">
+            <h2>Alien Cleaner</h2>
+            <p class="cost">
+                Cost: {{ alienCleanerCost | number }}
+                <span class="cost-currency">Crush Keys</span>
+            </p>
+            <button
+                (click)="buyAlienCleaner()"
+                [disabled]="gameManager.crushKeys() < alienCleanerCost"
+            >
+                BUY
+            </button>
+        </div>
     </div>
 </div>

@@ -13,6 +13,7 @@ import { isPlatformBrowser } from '@angular/common';
 const CRUSH_KEYS_STORAGE_KEY = 'crush_keys';
 const BOOSTERS_STORAGE_KEY = 'crush_boosters';
 const TIME_BOOSTERS_STORAGE_KEY = 'time_boosters';
+const ALIEN_CLEANERS_STORAGE_KEY = 'alien_cleaners';
 
 @Injectable({
     providedIn: 'root',
@@ -33,6 +34,7 @@ export class GameManagerService {
     boosters: WritableSignal<number> = signal(0);
     activeBlackHoles = signal(0);
     timeBoosters: WritableSignal<number> = signal(0);
+    alienCleaners: WritableSignal<number> = signal(0);
     level = signal(1);
     progress = signal(0);
     progressTarget = signal(100);
@@ -47,6 +49,8 @@ export class GameManagerService {
 
     private gameTimerInterval: number | undefined;
     private alienScoreInterval: number | undefined;
+    private blackHoleDecayInterval: number | undefined;
+    private lastHitTime = signal(0);
     private isBrowser = false;
 
     constructor() {
@@ -55,6 +59,7 @@ export class GameManagerService {
             this.loadCrushKeys();
             this.loadBoosters();
             this.loadTimeBoosters();
+            this.loadAlienCleaners();
             // Save crush keys whenever they change
             effect(() => {
                 this.saveCrushKeys(this.crushKeys());
@@ -66,6 +71,10 @@ export class GameManagerService {
             // Save time boosters whenever they change
             effect(() => {
                 this.saveTimeBoosters(this.timeBoosters());
+            });
+            // Save alien cleaners whenever they change
+            effect(() => {
+                this.saveAlienCleaners(this.alienCleaners());
             });
         }
     }
@@ -109,12 +118,29 @@ export class GameManagerService {
         localStorage.setItem(TIME_BOOSTERS_STORAGE_KEY, boosters.toString());
     }
 
+    private loadAlienCleaners() {
+        if (!this.isBrowser) return;
+        const savedCleaners = localStorage.getItem(ALIEN_CLEANERS_STORAGE_KEY);
+        if (savedCleaners) {
+            this.alienCleaners.set(parseInt(savedCleaners, 10) || 0);
+        }
+    }
+
+    private saveAlienCleaners(cleaners: number) {
+        if (!this.isBrowser) return;
+        localStorage.setItem(ALIEN_CLEANERS_STORAGE_KEY, cleaners.toString());
+    }
+
     addBooster(amount: number) {
         this.boosters.update((current) => current + amount);
     }
 
     addTimeBooster(amount: number) {
         this.timeBoosters.update((current) => current + amount);
+    }
+
+    addAlienCleaner(amount: number) {
+        this.alienCleaners.update((current) => current + amount);
     }
 
     spendBooster(amount: number): boolean {
@@ -133,10 +159,19 @@ export class GameManagerService {
         return false;
     }
 
+    spendAlienCleaner(amount: number): boolean {
+        if (this.alienCleaners() >= amount) {
+            this.alienCleaners.update((c) => c - amount);
+            return true;
+        }
+        return false;
+    }
+
     addScore(points: number) {
-        if (this.isGameOver() || this.isAlienActive()) return;
+        if (this.isGameOver()) return;
         this.sessionScore.update((current) => current + points);
         this.progress.update((current) => current + points);
+        this.lastHitTime.set(Date.now());
         this.updateLevel();
     }
 
@@ -174,14 +209,13 @@ export class GameManagerService {
                 }
 
                 this.activeBlackHoles.set(numBlackHoles);
-                // 20% chance to spawn an alien after the black hole
-                if (Math.random() < 0.8) {
-                    this.spawnAlien();
-                }
 
                 setTimeout(() => {
                     this.activeBlackHoles.set(0);
                     this.blackHoleComboCounter.set(0);
+                    if (Math.random() < 0.8) {
+                        this.spawnAlien();
+                    }
                 }, GAME_CONFIG.blackHole.durationMs);
             }
         }
@@ -194,7 +228,7 @@ export class GameManagerService {
 
         // Alien eats score while active
         this.alienScoreInterval = window.setInterval(() => {
-            this.sessionScore.update((s) => Math.max(0, s - 200));
+            this.sessionScore.update((s) => Math.max(0, s - 100));
         }, 1000);
 
         // Alien disappears after 10 seconds
@@ -205,6 +239,15 @@ export class GameManagerService {
                 this.alienScoreInterval = undefined;
             }
         }, 10000);
+    }
+
+    clearAlien() {
+        this.isAlienActive.set(false);
+        if (this.alienScoreInterval) {
+            clearInterval(this.alienScoreInterval);
+            this.alienScoreInterval = undefined;
+        }
+        // No need for a timeout, it's gone instantly.
     }
 
     useUltimate(): boolean {
@@ -233,7 +276,6 @@ export class GameManagerService {
         this.activeBlackHoles.set(0);
         this.blackHoleComboCounter.set(0);
         this.comboStats.set(new Map());
-        this.isAlienActive.set(false);
         if (this.alienScoreInterval) {
             clearInterval(this.alienScoreInterval);
             this.alienScoreInterval = undefined;
@@ -246,6 +288,7 @@ export class GameManagerService {
         setTimeout(() => {
             this.countdownValue.set(null);
             this.isGameStarted.set(true);
+            this.startBlackHoleDecay();
             this.startGameTimer();
         }, 4000);
     }
@@ -282,6 +325,36 @@ export class GameManagerService {
         if (this.alienScoreInterval) {
             clearInterval(this.alienScoreInterval);
             this.alienScoreInterval = undefined;
+        }
+        this.stopBlackHoleDecay();
+    }
+
+    private startBlackHoleDecay() {
+        this.stopBlackHoleDecay(); // Ensure no multiple intervals
+        this.blackHoleDecayInterval = window.setInterval(() => {
+            if (
+                this.blackHoleComboCounter() > 0 &&
+                !this.isBlackHoleActive() &&
+                this.isGameStarted()
+            ) {
+                const timeSinceLastHit = Date.now() - this.lastHitTime();
+                let decayAmount = 1; // Base decay
+                if (timeSinceLastHit > 5000) {
+                    decayAmount = 3; // Faster decay after 5 seconds of inactivity
+                } else if (timeSinceLastHit > 2000) {
+                    decayAmount = 2; // Moderate decay after 2 seconds
+                }
+                this.blackHoleComboCounter.update((c) =>
+                    Math.max(0, c - decayAmount)
+                );
+            }
+        }, 1000); // Check every second
+    }
+
+    private stopBlackHoleDecay() {
+        if (this.blackHoleDecayInterval) {
+            clearInterval(this.blackHoleDecayInterval);
+            this.blackHoleDecayInterval = undefined;
         }
     }
 

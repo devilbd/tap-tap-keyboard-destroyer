@@ -45,6 +45,18 @@
         <span class="booster-key">{{ timeBoosterKey }}</span>
         {{ timeBoosterButtonText }}
     </button>
+    } @if (gameManager.alienCleaners() > 0) {
+    <button
+        class="booster-button alien-cleaner-button"
+        (click)="triggerAlienCleaner($event)"
+        [disabled]="
+            !gameManager.isAlienActive() ||
+            alienCleanerButtonText !== 'USE ALIEN CLEANER'
+        "
+    >
+        <span class="booster-key">{{ alienCleanerKey }}</span>
+        {{ alienCleanerButtonText }}
+    </button>
     }
     <button
         class="booster-button ultimate-button"

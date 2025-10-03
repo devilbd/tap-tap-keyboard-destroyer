@@ -105,6 +105,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private lastCrushBoosterTime = 0;
     private lastTimeBoosterTime = 0;
     private lastUltimateTime = 0;
+    private lastAlienCleanerTime = 0;
     private readonly boosterCooldown = 5000; // 5 seconds
     private keyCooldowns: Map<string, number> = new Map();
     private lastPressTimes: Map<string, number> = new Map();
@@ -129,22 +130,17 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
     crushBoosterButtonText = 'USE BOOSTER';
     timeBoosterButtonText = 'USE TIME BOOSTER';
+    alienCleanerButtonText = 'USE ALIEN CLEANER';
     ultimateButtonText = 'ULTIMATE';
 
     get timeBoosterKey(): string {
-        return this.gameManager.boosters() > 0 ? '2' : '1';
+        return this.getButtonKey('time');
     }
-
+    get alienCleanerKey(): string {
+        return this.getButtonKey('alien');
+    }
     get ultimateBoosterKey(): string {
-        const boosters = this.gameManager.boosters() > 0;
-        const timeBoosters = this.gameManager.timeBoosters() > 0;
-
-        if (boosters && timeBoosters) {
-            return '3';
-        } else if (boosters || timeBoosters) {
-            return '2';
-        }
-        return '1';
+        return this.getButtonKey('ultimate');
     }
 
     consoleLogs: string[] = [];
@@ -244,6 +240,22 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             100;
         const activeSegmentPercent = ((index + 1) / this.segments.length) * 100;
         return activeSegmentPercent <= percent;
+    }
+
+    private getButtonKey(buttonType: 'time' | 'alien' | 'ultimate'): string {
+        let key = 1;
+        if (this.gameManager.boosters() > 0) {
+            key++;
+        }
+        if (buttonType === 'time') return key.toString();
+        if (this.gameManager.timeBoosters() > 0) {
+            key++;
+        }
+        if (buttonType === 'alien') return key.toString();
+        if (this.gameManager.alienCleaners() > 0) {
+            key++;
+        }
+        return key.toString();
     }
 
     ngAfterViewInit() {
@@ -375,6 +387,11 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this._triggerUltimate();
     }
 
+    triggerAlienCleaner(event?: Event) {
+        event?.preventDefault();
+        this._triggerAlienCleaner();
+    }
+
     @HostListener('window:keydown', ['$event'])
     onKeyDown(event: KeyboardEvent) {
         if (
@@ -393,7 +410,18 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             this._triggerTimeBooster();
             return;
         }
-        if (event.key === this.ultimateBoosterKey) {
+        if (
+            event.key === this.alienCleanerKey &&
+            this.gameManager.alienCleaners() > 0
+        ) {
+            event.preventDefault();
+            this._triggerAlienCleaner();
+            return;
+        }
+        if (
+            event.key === this.ultimateBoosterKey && // Use the getter here
+            this.gameManager.isUltimateReady()
+        ) {
             event.preventDefault();
             this._triggerUltimate();
             return;
@@ -754,6 +782,26 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 );
             }, i * 50); // A faster 50ms delay between each combo
         }
+    }
+
+    private _triggerAlienCleaner() {
+        const now = Date.now();
+        if (now - this.lastAlienCleanerTime < this.boosterCooldown) {
+            this.logToConsole('ALIEN CLEANER on cooldown.');
+            return;
+        }
+
+        if (
+            this.gameManager.isGameOver() ||
+            !this.gameManager.isGameStarted() ||
+            !this.gameManager.spendAlienCleaner(1)
+        ) {
+            return;
+        }
+        this.lastAlienCleanerTime = now;
+
+        this.logToConsole('ALIEN CLEANER ACTIVATED!');
+        this.gameManager.clearAlien();
     }
 
     private playSound(soundFile: string): void {
@@ -1481,6 +1529,17 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             ).toFixed(1)}s`;
         } else {
             this.ultimateButtonText = 'ULTIMATE';
+        }
+
+        // Alien Cleaner
+        const alienCleanerCooldownRemaining =
+            this.lastAlienCleanerTime + this.boosterCooldown - now;
+        if (alienCleanerCooldownRemaining > 0) {
+            this.alienCleanerButtonText = `COOLDOWN: ${(
+                alienCleanerCooldownRemaining / 1000
+            ).toFixed(1)}s`;
+        } else {
+            this.alienCleanerButtonText = 'USE ALIEN CLEANER';
         }
 
         this.cdr.markForCheck();

@@ -1,15 +1,18 @@
 <router-outlet />
 <div class="app-container">
-  <div class="global-hud">
-    <div class="currency">
-      CRUSH KEYS: {{ gameManager.crushKeys() | number }}
+    <div class="global-hud">
+        <div class="currency">
+            CRUSH KEYS: {{ gameManager.crushKeys() | number }}
+        </div>
+        <div class="currency booster-display">
+            BOOSTERS: {{ gameManager.boosters() | number }}
+        </div>
+        <div class="currency time-booster-display">
+            TIME BOOSTERS: {{ gameManager.timeBoosters() | number }}
+        </div>
+        <div class="currency alien-cleaner-display">
+            ALIEN CLEANERS: {{ gameManager.alienCleaners() | number }}
+        </div>
     </div>
-    <div class="currency booster-display">
-      BOOSTERS: {{ gameManager.boosters() | number }}
-    </div>
-    <div class="currency time-booster-display">
-      TIME BOOSTERS: {{ gameManager.timeBoosters() | number }}
-    </div>
-  </div>
-  <router-outlet></router-outlet>
+    <router-outlet></router-outlet>
 </div>
