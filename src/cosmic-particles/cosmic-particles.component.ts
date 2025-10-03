@@ -705,7 +705,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             this.canvasRef.nativeElement.height / 2
         );
         this.gameManager.recordCombo(comboText);
-        this.gameManager.recordBigCombo(5); // Mobile combos contribute more
+        this.gameManager.recordBigCombo(10); // Mobile combos contribute more
         this.processCombo(comboIdentifier);
         this.lastPressTimes.set(comboIdentifier, currentTime);
     }
