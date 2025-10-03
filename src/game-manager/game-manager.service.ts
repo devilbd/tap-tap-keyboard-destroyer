@@ -190,9 +190,9 @@ export class GameManagerService {
         return false;
     }
 
-    recordBigCombo() {
+    recordBigCombo(amount: number = 1) {
         if (this.isUltimateReady()) return;
-        this.ultimateComboCounter.update((c) => c + 1);
+        this.ultimateComboCounter.update((c) => c + amount);
         if (!this.isBlackHoleActive()) {
             this.blackHoleComboCounter.update((c) => c + 1);
             if (
