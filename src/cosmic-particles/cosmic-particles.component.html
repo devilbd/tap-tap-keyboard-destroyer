@@ -71,12 +71,6 @@
         ></div>
         }
     </div>
-    <div class="progress-text">
-        {{
-            (gameManager.progress() / gameManager.progressTarget()) * 100
-                | number : "1.0-0"
-        }}%
-    </div>
 </div>
 @if (gameManager.showLevelUp()) {
 <div
