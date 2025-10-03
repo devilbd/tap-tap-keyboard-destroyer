@@ -343,6 +343,13 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     onTouchStart(event: TouchEvent) {
         if (this.gameManager.isGameOver() || !this.gameManager.isGameStarted())
             return;
+
+        // If the touch target is a button, let the button's (click) handler do the work.
+        const target = event.target as HTMLElement;
+        if (target.closest('.booster-button')) {
+            return;
+        }
+
         event.preventDefault(); // Prevents firing mouse events as well
 
         const now = Date.now();
