@@ -192,6 +192,7 @@ canvas {
     background-color: rgba(0, 0, 0, 0.2);
     font-size: 20px;
     line-height: 1;
+    flex-shrink: 0; /* Prevent the circle from being squished */
 }
 
 .booster-button:hover {
@@ -214,6 +215,13 @@ canvas {
     background: #ff0000;
     box-shadow: 0 0 15px #ff0000;
 }
+.ultimate-container {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    align-self: stretch;
+}
 
 .booster-button:disabled {
     background: #555;
@@ -229,29 +237,31 @@ canvas {
 }
 
 .level-display {
-    position: fixed;
-    top: 30px;
-    left: 40px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     color: #ffd700;
     font-family: "KaBlam", Impact, sans-serif;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 900;
     -webkit-text-stroke: 2px black;
     text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
-    z-index: 1000;
     pointer-events: none;
+    text-align: center;
+    line-height: 1;
 }
 
 .progress-container {
     position: fixed;
-    bottom: 40px;
-    left: 50px;
+    top: 30px;
+    left: 40px;
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
 }
 
 .progress-ring {
@@ -287,24 +297,22 @@ canvas {
     box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
 }
 
-.level-up-overlay {
-    position: fixed;
-    top: 0;
-    /* Positioned relative to the main level display */
-    top: 85px;
-    left: 40px;
-    z-index: 2000;
-    animation: fadeOut 1.2s ease-in-out;
-    pointer-events: none;
+.progress-container.level-up-pulse .progress-segment.active::before {
+    animation: pulse 0.5s infinite ease-in-out;
 }
 
-.level-up-text {
-    font-family: "KaBlam", Impact, sans-serif;
-    font-size: 40px;
-    font-weight: 900;
-    color: #ffd700;
-    -webkit-text-stroke: 2px black;
-    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
+.ultimate-progress-ring {
+    position: absolute;
+    width: 70px; /* Make it smaller */
+    height: 70px;
+    transform: rotate(-90deg); /* Start from the top */
+    pointer-events: none; /* So it doesn't block clicks */
+    bottom: 80px; /* Position it above the button */
+}
+
+.progress-segment.ultimate.active::before {
+    background-color: #ff0000;
+    box-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
 }
 
 .combo-text-container {
@@ -512,7 +520,7 @@ canvas {
 
 /* Responsive styles for smaller screens */
 @media (max-width: 768px) {
-    .level-display {
+    .progress-container {
         top: 20px;
         left: 20px;
     }

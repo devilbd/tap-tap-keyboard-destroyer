@@ -242,6 +242,15 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         return activeSegmentPercent <= percent;
     }
 
+    isUltimateSegmentActive(index: number): boolean {
+        const percent =
+            (this.gameManager.ultimateComboCounter() /
+                GAME_CONFIG.ultimateThreshold) *
+            100;
+        const activeSegmentPercent = ((index + 1) / this.segments.length) * 100;
+        return activeSegmentPercent <= percent;
+    }
+
     private getButtonKey(buttonType: 'time' | 'alien' | 'ultimate'): string {
         let key = 1;
         if (this.gameManager.boosters() > 0) {
