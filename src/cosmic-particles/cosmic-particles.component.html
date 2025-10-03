@@ -28,6 +28,7 @@
     SCORE: {{ gameManager.sessionScore() | number }}
 </div>
 <div class="booster-button-container">
+    @if (gameManager.boosters() > 0) {
     <button
         class="booster-button"
         (click)="triggerCrushBooster($event)"
@@ -35,13 +36,16 @@
     >
         <span class="booster-key">1</span> {{ crushBoosterButtonText }}
     </button>
+    } @if (gameManager.timeBoosters() > 0) {
     <button
         class="booster-button time-booster-button"
         (click)="triggerTimeBooster($event)"
         [disabled]="timeBoosterButtonText !== 'USE TIME BOOSTER'"
     >
-        <span class="booster-key">2</span> {{ timeBoosterButtonText }}
+        <span class="booster-key">{{ timeBoosterKey }}</span>
+        {{ timeBoosterButtonText }}
     </button>
+    }
     <button
         class="booster-button ultimate-button"
         (click)="triggerUltimate($event)"
@@ -49,7 +53,8 @@
             !gameManager.isUltimateReady() || ultimateButtonText !== 'ULTIMATE'
         "
     >
-        <span class="booster-key">3</span> {{ ultimateButtonText }}
+        <span class="booster-key">{{ ultimateBoosterKey }}</span>
+        {{ ultimateButtonText }}
     </button>
 </div>
 <div class="timer-display">

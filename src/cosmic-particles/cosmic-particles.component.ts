@@ -123,6 +123,22 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     timeBoosterButtonText = 'USE TIME BOOSTER';
     ultimateButtonText = 'ULTIMATE';
 
+    get timeBoosterKey(): string {
+        return this.gameManager.boosters() > 0 ? '2' : '1';
+    }
+
+    get ultimateBoosterKey(): string {
+        const boosters = this.gameManager.boosters() > 0;
+        const timeBoosters = this.gameManager.timeBoosters() > 0;
+
+        if (boosters && timeBoosters) {
+            return '3';
+        } else if (boosters || timeBoosters) {
+            return '2';
+        }
+        return '1';
+    }
+
     consoleLogs: string[] = [];
     gameVersion = packageInfo.version;
 
@@ -298,17 +314,23 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
     @HostListener('window:keydown', ['$event'])
     onKeyDown(event: KeyboardEvent) {
-        if (event.key === 'Enter' || event.key === '1') {
+        if (
+            (event.key === 'Enter' || event.key === '1') &&
+            this.gameManager.boosters() > 0
+        ) {
             event.preventDefault();
             this._triggerCrushBooster();
             return;
         }
-        if (event.key === '2') {
+        if (
+            event.key === this.timeBoosterKey &&
+            this.gameManager.timeBoosters() > 0
+        ) {
             event.preventDefault();
             this._triggerTimeBooster();
             return;
         }
-        if (event.key === '3') {
+        if (event.key === this.ultimateBoosterKey) {
             event.preventDefault();
             this._triggerUltimate();
             return;
