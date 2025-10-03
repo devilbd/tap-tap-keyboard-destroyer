@@ -174,6 +174,7 @@ canvas {
     border-radius: 10px;
     -webkit-text-stroke: 2px black;
     text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 12px black, inset 0 0 5px rgba(0, 0, 0, 0.5);
     cursor: pointer;
     transition: transform 0.1s ease-out, background 0.1s ease-out;
     display: flex;
@@ -187,7 +188,7 @@ canvas {
     justify-content: center;
     width: 32px;
     height: 32px;
-    border: 4px solid black;
+    border: none;
     border-radius: 100%;
     background-color: rgba(0, 0, 0, 0.2);
     font-size: 20px;
@@ -230,10 +231,6 @@ canvas {
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
-
-    .booster-key {
-        border-color: #333;
-    }
 }
 
 .level-display {

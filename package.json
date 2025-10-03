@@ -1,6 +1,6 @@
 {
     "name": "tap-tap-keyboard-destroyer",
-    "version": "1.2.005",
+    "version": "1.2.006",
     "scripts": {
         "ng": "ng",
         "start": "ng serve",
