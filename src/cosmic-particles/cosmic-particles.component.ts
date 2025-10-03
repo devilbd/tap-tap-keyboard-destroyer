@@ -345,20 +345,26 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             return;
         event.preventDefault(); // Prevents firing mouse events as well
 
-        const currentTouchCount = event.touches.length;
-
-        // Trigger a combo only on the frame where the touch count increases to 3 or more
-        if (currentTouchCount >= 3 && this.lastTouchCount < currentTouchCount) {
-            // Multi-finger tap detected, process as a mobile combo
-            this.processMobileCombo();
-        } else if (currentTouchCount > this.lastTouchCount) {
-            // This is a new single touch, handle it normally
-            // We use the last touch in the list as it's the newest one
-            const newTouch = event.touches[currentTouchCount - 1];
-            this.handleInteraction(newTouch.clientX, newTouch.clientY);
+        const now = Date.now();
+        this.mobileTapTimestamps.push(now);
+        // Keep only the last 3 timestamps
+        if (this.mobileTapTimestamps.length > 3) {
+            this.mobileTapTimestamps.shift();
         }
 
-        this.lastTouchCount = currentTouchCount;
+        // Check for a rapid triple tap
+        if (
+            this.mobileTapTimestamps.length === 3 &&
+            now - this.mobileTapTimestamps[0] < 500
+        ) {
+            // Triple tap combo!
+            this.processMobileCombo();
+            this.mobileTapTimestamps = []; // Reset after combo
+        }
+
+        // Process the individual tap
+        const touch = event.changedTouches[0];
+        this.handleInteraction(touch.clientX, touch.clientY);
     }
 
     @HostListener('touchend', ['$event'])
