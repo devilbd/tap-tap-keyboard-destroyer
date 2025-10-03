@@ -114,6 +114,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private keyboardMatrix: Map<string, KeyPosition> = new Map();
     private comboKeyTimestamps: number[] = [];
     private particleImages: HTMLImageElement[] = [];
+    private alienAnimationStart = 0;
+    private readonly alienAnimationDuration = 500; // 0.5 second appear animation
     private alienImage: HTMLImageElement | null = null;
     private swUpdateSubscription: Subscription | undefined;
     private swCheckForUpdateSubscription: Subscription | undefined;
@@ -159,6 +161,11 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             this.warpGates = []; // Clear existing black holes
             for (let i = 0; i < numBlackHoles; i++) {
                 this.warpGates.push(this.createWarpGate());
+            }
+        });
+        effect(() => {
+            if (this.gameManager.isAlienActive()) {
+                this.alienAnimationStart = Date.now();
             }
         });
         if (this.swUpdate.isEnabled) {
@@ -1312,22 +1319,53 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             return;
         }
         const canvas = this.canvasRef.nativeElement;
-        const { width, height } = canvas;
-        const centerX = width / 2;
-        const centerY = height / 2;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
 
-        // Simple pulsing animation
-        const scale = 1 + Math.sin(Date.now() / 200) * 0.05;
-        const alienWidth = this.alienImage.width * scale;
-        const alienHeight = this.alienImage.height * scale;
+        const now = Date.now();
+        const elapsed = now - this.alienAnimationStart;
 
+        const padding = 15;
+        const imageSize = Math.max(
+            this.alienImage.width,
+            this.alienImage.height
+        );
+        const radius = imageSize / 2 + padding;
+
+        // Draw a circular background for the alien
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        this.ctx.fillStyle = 'rgba(10, 10, 20, 0.5)';
+        this.ctx.fill();
+        this.ctx.save();
+        this.ctx.translate(centerX, centerY);
+
+        if (elapsed < this.alienAnimationDuration) {
+            // --- Entrance Animation ---
+            const progress = elapsed / this.alienAnimationDuration;
+            const scale = progress; // Linear scale from 0 to 1
+            const rotation = progress * Math.PI * 2; // One full clockwise rotation
+
+            this.ctx.scale(scale, scale);
+            this.ctx.rotate(rotation);
+
+            // Clip to the circle during entrance animation
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, radius / scale, 0, Math.PI * 2);
+            this.ctx.clip();
+        } else {
+        }
+
+        // Draw the alien centered
         this.ctx.drawImage(
             this.alienImage,
-            centerX - alienWidth / 2,
-            centerY - alienHeight / 2,
-            alienWidth,
-            alienHeight
+            -this.alienImage.width / 2,
+            -this.alienImage.height / 2
         );
+
+        this.ctx.restore();
+        this.ctx.restore(); // Restore from the background drawing
     }
 
     private drawStripes() {
