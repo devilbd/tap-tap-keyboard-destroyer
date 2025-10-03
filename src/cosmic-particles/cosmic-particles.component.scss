@@ -303,16 +303,28 @@ canvas {
 
 .ultimate-progress-ring {
     position: absolute;
-    width: 70px; /* Make it smaller */
-    height: 70px;
+    width: 40px;
+    height: 40px;
     transform: rotate(-90deg); /* Start from the top */
     pointer-events: none; /* So it doesn't block clicks */
-    bottom: 80px; /* Position it above the button */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .progress-segment.ultimate.active::before {
     background-color: #ff0000;
     box-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
+}
+
+.ultimate-button .ultimate-progress-ring {
+    position: relative; /* Position relative to the button flex layout */
+    transform: rotate(0deg); /* Reset rotation from circular layout */
+}
+
+.ultimate-key-centered {
+    border: none; /* The ring is the new border */
+    background: none;
 }
 
 .combo-text-container {

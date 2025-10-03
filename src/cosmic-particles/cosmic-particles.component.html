@@ -59,17 +59,6 @@
     </button>
     }
     <div class="ultimate-container">
-        <div class="ultimate-progress-ring">
-            @for (segment of segments; track $index) {
-            <div
-                class="progress-segment ultimate"
-                [class.active]="isUltimateSegmentActive($index)"
-                [style.transform]="
-                    'rotate(' + $index * segmentRotation + 'deg)'
-                "
-            ></div>
-            }
-        </div>
         <button
             class="booster-button ultimate-button"
             (click)="triggerUltimate($event)"
@@ -78,7 +67,20 @@
                 ultimateButtonText !== 'ULTIMATE'
             "
         >
-            <span class="booster-key">{{ ultimateBoosterKey }}</span>
+            <div class="ultimate-progress-ring">
+                @for (segment of segments; track $index) {
+                <div
+                    class="progress-segment ultimate"
+                    [class.active]="isUltimateSegmentActive($index)"
+                    [style.transform]="
+                        'rotate(' + $index * segmentRotation + 'deg)'
+                    "
+                ></div>
+                }
+                <span class="booster-key ultimate-key-centered">{{
+                    ultimateBoosterKey
+                }}</span>
+            </div>
             {{ ultimateButtonText }}
         </button>
     </div>
@@ -86,10 +88,7 @@
 <div class="timer-display">
     TIME {{ gameManager.timer() | number : "1.0-0" }}
 </div>
-<div
-    class="progress-container"
-    [class.level-up-pulse]="gameManager.showLevelUp()"
->
+<div class="progress-container">
     <div class="progress-ring">
         @for (segment of segments; track $index) {
         <div
@@ -101,6 +100,13 @@
     </div>
     <div class="level-display">LEVEL {{ gameManager.level() }}</div>
 </div>
+@if (gameManager.showLevelUp()) {
+<div
+    class="level-up-overlay"
+    [ngStyle]="{ opacity: gameManager.showLevelUp() ? 1 : 0 }"
+>
+    <div class="level-up-text">LEVEL UP</div>
+</div>
 } @if (comboText) {
 <div class="combo-text-container">
     <div
@@ -109,6 +115,10 @@
         [innerHTML]="comboText.text"
     ></div>
 </div>
+}
+<!-- <div #console class="console">
+        <div *ngFor="let log of consoleLogs">{{ log }}</div>
+      </div> -->
 } @if (gameManager.isGameOver()) {
 <div class="game-over-overlay">
     <div class="game-over-text">GAME OVER</div>
