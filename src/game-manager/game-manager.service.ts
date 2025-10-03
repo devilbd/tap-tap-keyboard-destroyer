@@ -43,8 +43,10 @@ export class GameManagerService {
     countdownValue: WritableSignal<string | null> = signal(null);
 
     isBlackHoleActive = computed(() => this.activeBlackHoles() > 0);
+    isAlienActive = signal(false);
 
     private gameTimerInterval: number | undefined;
+    private alienScoreInterval: number | undefined;
     private isBrowser = false;
 
     constructor() {
@@ -132,7 +134,7 @@ export class GameManagerService {
     }
 
     addScore(points: number) {
-        if (this.isGameOver()) return;
+        if (this.isGameOver() || this.isAlienActive()) return;
         this.sessionScore.update((current) => current + points);
         this.progress.update((current) => current + points);
         this.updateLevel();
@@ -172,6 +174,10 @@ export class GameManagerService {
                 }
 
                 this.activeBlackHoles.set(numBlackHoles);
+                // 20% chance to spawn an alien after the black hole
+                if (Math.random() < 0.8) {
+                    this.spawnAlien();
+                }
 
                 setTimeout(() => {
                     this.activeBlackHoles.set(0);
@@ -179,6 +185,26 @@ export class GameManagerService {
                 }, GAME_CONFIG.blackHole.durationMs);
             }
         }
+    }
+
+    private spawnAlien() {
+        if (this.isGameOver()) return;
+
+        this.isAlienActive.set(true);
+
+        // Alien eats score while active
+        this.alienScoreInterval = window.setInterval(() => {
+            this.sessionScore.update((s) => Math.max(0, s - 200));
+        }, 1000);
+
+        // Alien disappears after 10 seconds
+        setTimeout(() => {
+            this.isAlienActive.set(false);
+            if (this.alienScoreInterval) {
+                clearInterval(this.alienScoreInterval);
+                this.alienScoreInterval = undefined;
+            }
+        }, 10000);
     }
 
     useUltimate(): boolean {
@@ -207,6 +233,11 @@ export class GameManagerService {
         this.activeBlackHoles.set(0);
         this.blackHoleComboCounter.set(0);
         this.comboStats.set(new Map());
+        this.isAlienActive.set(false);
+        if (this.alienScoreInterval) {
+            clearInterval(this.alienScoreInterval);
+            this.alienScoreInterval = undefined;
+        }
 
         this.countdownValue.set('3');
         setTimeout(() => this.countdownValue.set('2'), 1000);
@@ -247,6 +278,10 @@ export class GameManagerService {
         if (this.gameTimerInterval) {
             clearInterval(this.gameTimerInterval);
             this.gameTimerInterval = undefined;
+        }
+        if (this.alienScoreInterval) {
+            clearInterval(this.alienScoreInterval);
+            this.alienScoreInterval = undefined;
         }
     }
 

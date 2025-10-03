@@ -114,6 +114,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private keyboardMatrix: Map<string, KeyPosition> = new Map();
     private comboKeyTimestamps: number[] = [];
     private particleImages: HTMLImageElement[] = [];
+    private alienImage: HTMLImageElement | null = null;
     private swUpdateSubscription: Subscription | undefined;
     private swCheckForUpdateSubscription: Subscription | undefined;
     private mobileTapTimestamps: number[] = [];
@@ -243,6 +244,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.ctx = canvas.getContext('2d')!;
         this.resizeCanvas();
         this.loadParticleImages().then(() => {
+            this.loadAlienImage();
             this.initializeParticles();
             this.initializeStripes();
             this.animate();
@@ -253,10 +255,10 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
     private async loadParticleImages(): Promise<void> {
         const imageSources = [
-            'assets/images/particles/optimized/1_o.png',
-            'assets/images/particles/optimized/2_o.png',
-            'assets/images/particles/optimized/3_o.png',
-            'assets/images/particles/optimized/4_o.png',
+            '/assets/images/particles/optimized/1_o.png',
+            '/assets/images/particles/optimized/2_o.png',
+            '/assets/images/particles/optimized/3_o.png',
+            '/assets/images/particles/optimized/4_o.png',
         ];
         const imagePromises = imageSources.map(
             (src) =>
@@ -268,6 +270,21 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 })
         );
         this.particleImages = await Promise.all(imagePromises);
+    }
+
+    private async loadAlienImage(): Promise<void> {
+        try {
+            this.alienImage = await new Promise<HTMLImageElement>(
+                (resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = '/assets/images/aliens/1_o.png';
+                }
+            );
+        } catch (error) {
+            console.error('Failed to load alien image', error);
+        }
     }
 
     ngOnDestroy() {
@@ -1290,6 +1307,29 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         });
     }
 
+    private drawAlien() {
+        if (!this.gameManager.isAlienActive() || !this.alienImage) {
+            return;
+        }
+        const canvas = this.canvasRef.nativeElement;
+        const { width, height } = canvas;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        // Simple pulsing animation
+        const scale = 1 + Math.sin(Date.now() / 200) * 0.05;
+        const alienWidth = this.alienImage.width * scale;
+        const alienHeight = this.alienImage.height * scale;
+
+        this.ctx.drawImage(
+            this.alienImage,
+            centerX - alienWidth / 2,
+            centerY - alienHeight / 2,
+            alienWidth,
+            alienHeight
+        );
+    }
+
     private drawStripes() {
         if (!this.gameManager.isBlackHoleActive()) return;
         this.warpGates.forEach((gate) => {
@@ -1419,6 +1459,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             // Draw fog spots underneath the particles for a better depth effect
             this.drawAccretionDisk();
             this.drawFogSpots();
+            this.drawAlien();
         }
 
         this.drawParticles();
