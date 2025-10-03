@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { GAME_CONFIG } from '../constants/game-config';
 import { GameManagerService } from '../game-manager/game-manager.service';
 import packageInfo from '../../package.json';
+import { SwUpdate } from '@angular/service-worker';
 
 const PERSPECTIVE = 500;
 const FOCAL_LENGTH = 500;
@@ -125,7 +126,8 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     constructor(
         private cdr: ChangeDetectorRef,
         private analytics: Analytics,
-        public gameManager: GameManagerService
+        public gameManager: GameManagerService,
+        private swUpdate: SwUpdate
     ) {
         effect(() => {
             const numBlackHoles = this.gameManager.activeBlackHoles();
@@ -134,6 +136,21 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 this.warpGates.push(this.createWarpGate());
             }
         });
+        if (swUpdate.isEnabled) {
+            swUpdate.versionUpdates.subscribe((evt) => {
+                if (evt.type !== 'VERSION_READY') {
+                    return;
+                }
+                console.log('New version available. Reload to update.');
+                if (
+                    confirm(
+                        'A new version of the game is available. Load it now?'
+                    )
+                ) {
+                    window.location.reload();
+                }
+            });
+        }
     }
 
     restartGame(): void {
