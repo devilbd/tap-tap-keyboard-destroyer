@@ -40,7 +40,7 @@ interface Particle {
 }
 
 interface FogSpot {
-    shape: 'circle' | 'triangle' | 'rectangle';
+    shape: 'circle';
     x: number;
     y: number;
     size: number;
@@ -120,6 +120,9 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private lastTouchCount = 0;
     comboText: { text: string; style: any } | null = null;
     currentProgressBarGradient = GAME_CONFIG.progressBarGradients[0];
+
+    readonly progressRadius = 52;
+    readonly progressCircumference = 2 * Math.PI * this.progressRadius;
 
     crushBoosterButtonText = 'USE BOOSTER';
     timeBoosterButtonText = 'USE TIME BOOSTER';
@@ -698,9 +701,6 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                     y,
                     GAME_CONFIG.explosion.types.highStrike
                 );
-
-                // Also call processCombo for score, logging, and black hole nudge
-                this.processCombo(`ultimate-${i}`, x, y);
             }, i * 50); // A faster 50ms delay between each combo
         }
     }
@@ -929,11 +929,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.scatterCosmicParticles(x, y, explosionType);
     }
     private createFogSpot(x: number, y: number, explosionType: ExplosionType) {
-        const shapes = ['circle', 'triangle', 'rectangle'];
-        const shape = shapes[Math.floor(Math.random() * shapes.length)] as
-            | 'circle'
-            | 'triangle'
-            | 'rectangle';
+        const shape = 'circle';
         const colors = GAME_CONFIG.explosion.colors;
 
         const newFogSpot: FogSpot = {
@@ -1262,27 +1258,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             this.ctx.rotate(spot.rotation);
 
             this.ctx.beginPath();
-            switch (spot.shape) {
-                case 'circle':
-                    this.ctx.arc(0, 0, spot.size / 2, 0, Math.PI * 2);
-                    break;
-                case 'rectangle':
-                    // A 2:1 rectangle
-                    this.ctx.rect(
-                        -spot.size / 2,
-                        -spot.size / 4,
-                        spot.size,
-                        spot.size / 2
-                    );
-                    break;
-                case 'triangle':
-                    // Equilateral triangle
-                    this.ctx.moveTo(0, -spot.size / 2);
-                    this.ctx.lineTo((spot.size / 2) * 0.866, spot.size / 4);
-                    this.ctx.lineTo(-(spot.size / 2) * 0.866, spot.size / 4);
-                    this.ctx.closePath();
-                    break;
-            }
+            this.ctx.arc(0, 0, spot.size / 2, 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.restore();
         });

@@ -62,13 +62,30 @@
 </div>
 <div class="level-display">LEVEL {{ gameManager.level() }}</div>
 <div class="progress-container">
-    <div
-        class="progress-bar"
-        [style.width.%]="
-            (gameManager.progress() / gameManager.progressTarget()) * 100
-        "
-        [style.background]="getProgressBarGradient()"
-    ></div>
+    <svg class="progress-ring" width="120" height="120">
+        <circle
+            class="progress-ring__circle-bg"
+            stroke-width="8"
+            fill="transparent"
+            [attr.r]="progressRadius"
+            cx="60"
+            cy="60"
+        />
+        <circle
+            class="progress-ring__circle"
+            stroke-width="8"
+            fill="transparent"
+            [attr.r]="progressRadius"
+            cx="60"
+            cy="60"
+            [style.strokeDasharray]="progressCircumference"
+            [style.strokeDashoffset]="
+                progressCircumference -
+                (gameManager.progress() / gameManager.progressTarget()) *
+                    progressCircumference
+            "
+        />
+    </svg>
     <div class="progress-text">
         {{
             (gameManager.progress() / gameManager.progressTarget()) * 100
@@ -77,14 +94,31 @@
     </div>
 </div>
 <div class="black-hole-progress-container">
-    <div
-        class="black-hole-progress-bar"
-        [style.width.%]="
-            (gameManager.blackHoleComboCounter() /
-                gameManager.blackHoleComboThreshold) *
-            100
-        "
-    ></div>
+    <svg class="progress-ring" width="120" height="120">
+        <circle
+            class="progress-ring__circle-bg"
+            stroke-width="8"
+            fill="transparent"
+            [attr.r]="progressRadius"
+            cx="60"
+            cy="60"
+        />
+        <circle
+            class="progress-ring__circle black-hole"
+            stroke-width="8"
+            fill="transparent"
+            [attr.r]="progressRadius"
+            cx="60"
+            cy="60"
+            [style.strokeDasharray]="progressCircumference"
+            [style.strokeDashoffset]="
+                progressCircumference -
+                (gameManager.blackHoleComboCounter() /
+                    gameManager.blackHoleComboThreshold) *
+                    progressCircumference
+            "
+        />
+    </svg>
     <div class="black-hole-progress-text">BLACK HOLE</div>
 </div>
 @if (gameManager.showLevelUp()) {

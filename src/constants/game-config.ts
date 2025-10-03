@@ -75,28 +75,28 @@ export const GAME_CONFIG = {
             small: {
                 particleCount: { min: 5, max: 13 },
                 particleSize: { min: 25, max: 35 },
-                particleSpeed: { min: 4, max: 8 },
+                particleSpeed: { min: 8, max: 16 },
                 score: 1,
                 probability: 0.75, // 75% chance
             },
             medium: {
                 particleCount: { min: 20, max: 30 },
                 particleSize: { min: 35, max: 45 },
-                particleSpeed: { min: 6, max: 12 },
+                particleSpeed: { min: 12, max: 24 },
                 score: 5,
                 probability: 0.2, // 20% chance
             },
             large: {
                 particleCount: { min: 35, max: 50 },
                 particleSize: { min: 45, max: 50 },
-                particleSpeed: { min: 8, max: 16 },
+                particleSpeed: { min: 16, max: 32 },
                 score: 25,
                 probability: 0.05, // 5% chance
             },
             highStrike: {
                 particleCount: { min: 75, max: 100 },
                 particleSize: { min: 45, max: 50 },
-                particleSpeed: { min: 10, max: 20 },
+                particleSpeed: { min: 20, max: 40 },
                 score: 100, // This will fill the progress bar instantly
                 probability: 0, // Not triggered by random chance
             },
