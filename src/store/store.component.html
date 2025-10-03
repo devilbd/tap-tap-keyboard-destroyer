@@ -1,25 +1,35 @@
 <div class="store-container">
-  <div class="header">
-    <a routerLink="/game" class="back-button">← BACK TO GAME</a>
-    <h1>STORE</h1>
-  </div>
+    <div class="header">
+        <a routerLink="/game" class="back-button">← BACK TO GAME</a>
+        <h1>STORE</h1>
+    </div>
 
-  <div class="items-grid">
-    <div class="item-card">
-      <h2>Crush Booster</h2>
-      <p class="cost">
-        Cost: {{ boosterCost | number }}
-        <span class="cost-currency">Crush Keys</span>
-      </p>
-      <button (click)="buyBooster()">BUY</button>
+    <div class="items-grid">
+        <div class="item-card">
+            <h2>Crush Booster</h2>
+            <p class="cost">
+                Cost: {{ boosterCost | number }}
+                <span class="cost-currency">Crush Keys</span>
+            </p>
+            <button
+                (click)="buyBooster()"
+                [disabled]="gameManager.crushKeys() < boosterCost"
+            >
+                BUY
+            </button>
+        </div>
+        <div class="item-card">
+            <h2>Time Booster</h2>
+            <p class="cost">
+                Cost: {{ timeBoosterCost | number }}
+                <span class="cost-currency">Crush Keys</span>
+            </p>
+            <button
+                (click)="buyTimeBooster()"
+                [disabled]="gameManager.crushKeys() < timeBoosterCost"
+            >
+                BUY
+            </button>
+        </div>
     </div>
-    <div class="item-card">
-      <h2>Time Booster</h2>
-      <p class="cost">
-        Cost: {{ timeBoosterCost | number }}
-        <span class="cost-currency">Crush Keys</span>
-      </p>
-      <button (click)="buyTimeBooster()">BUY</button>
-    </div>
-  </div>
 </div>
