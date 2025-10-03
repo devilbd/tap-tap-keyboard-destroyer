@@ -733,7 +733,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
                 const { width, height } = this.canvasRef.nativeElement;
                 const x = Math.random() * width;
                 const y = Math.random() * height;
-                this.processCombo(`booster-${i}`, x, y);
+                this.triggerEffect(x, y, GAME_CONFIG.explosion.types.large);
             }, i * 100); // 100ms delay between each combo
         }
     }

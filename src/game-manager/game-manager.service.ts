@@ -10,10 +10,14 @@ import {
 import { GAME_CONFIG } from '../constants/game-config';
 import { isPlatformBrowser } from '@angular/common';
 
-const CRUSH_KEYS_STORAGE_KEY = 'crush_keys';
-const BOOSTERS_STORAGE_KEY = 'crush_boosters';
-const TIME_BOOSTERS_STORAGE_KEY = 'time_boosters';
-const ALIEN_CLEANERS_STORAGE_KEY = 'alien_cleaners';
+const GAME_STATE_STORAGE_KEY = 'tap-tap-destroyer-game-state';
+
+interface GameState {
+    crushKeys: number;
+    boosters: number;
+    timeBoosters: number;
+    alienCleaners: number;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -58,79 +62,40 @@ export class GameManagerService {
     constructor() {
         this.isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
         if (this.isBrowser) {
-            this.loadCrushKeys();
-            this.loadBoosters();
-            this.loadTimeBoosters();
-            this.loadAlienCleaners();
-            // Save crush keys whenever they change
+            this.loadGameState();
+            // Save game state whenever it changes
             effect(() => {
-                this.saveCrushKeys(this.crushKeys());
-            });
-            // Save boosters whenever they change
-            effect(() => {
-                this.saveBoosters(this.boosters());
-            });
-            // Save time boosters whenever they change
-            effect(() => {
-                this.saveTimeBoosters(this.timeBoosters());
-            });
-            // Save alien cleaners whenever they change
-            effect(() => {
-                this.saveAlienCleaners(this.alienCleaners());
+                // This effect will run whenever any of these signals change.
+                const state: GameState = {
+                    crushKeys: this.crushKeys(),
+                    boosters: this.boosters(),
+                    timeBoosters: this.timeBoosters(),
+                    alienCleaners: this.alienCleaners(),
+                };
+                this.saveGameState(state);
             });
         }
     }
 
-    private loadCrushKeys() {
+    private loadGameState() {
         if (!this.isBrowser) return;
-        const savedKeys = localStorage.getItem(CRUSH_KEYS_STORAGE_KEY);
-        if (savedKeys) {
-            this.crushKeys.set(parseInt(savedKeys, 10) || 0);
+        const savedState = localStorage.getItem(GAME_STATE_STORAGE_KEY);
+        if (savedState) {
+            try {
+                const state: GameState = JSON.parse(savedState);
+                this.crushKeys.set(state.crushKeys || 0);
+                this.boosters.set(state.boosters || 0);
+                this.timeBoosters.set(state.timeBoosters || 0);
+                this.alienCleaners.set(state.alienCleaners || 0);
+            } catch (e) {
+                console.error('Failed to parse saved game state:', e);
+            }
         }
     }
 
-    public saveCrushKeys(keys: number) {
+    private saveGameState(state: GameState) {
         if (!this.isBrowser) return;
-        localStorage.setItem(CRUSH_KEYS_STORAGE_KEY, keys.toString());
-    }
-
-    private loadBoosters() {
-        if (!this.isBrowser) return;
-        const savedBoosters = localStorage.getItem(BOOSTERS_STORAGE_KEY);
-        if (savedBoosters) {
-            this.boosters.set(parseInt(savedBoosters, 10) || 0);
-        }
-    }
-
-    private saveBoosters(boosters: number) {
-        if (!this.isBrowser) return;
-        localStorage.setItem(BOOSTERS_STORAGE_KEY, boosters.toString());
-    }
-
-    private loadTimeBoosters() {
-        if (!this.isBrowser) return;
-        const savedBoosters = localStorage.getItem(TIME_BOOSTERS_STORAGE_KEY);
-        if (savedBoosters) {
-            this.timeBoosters.set(parseInt(savedBoosters, 10) || 0);
-        }
-    }
-
-    private saveTimeBoosters(boosters: number) {
-        if (!this.isBrowser) return;
-        localStorage.setItem(TIME_BOOSTERS_STORAGE_KEY, boosters.toString());
-    }
-
-    private loadAlienCleaners() {
-        if (!this.isBrowser) return;
-        const savedCleaners = localStorage.getItem(ALIEN_CLEANERS_STORAGE_KEY);
-        if (savedCleaners) {
-            this.alienCleaners.set(parseInt(savedCleaners, 10) || 0);
-        }
-    }
-
-    private saveAlienCleaners(cleaners: number) {
-        if (!this.isBrowser) return;
-        localStorage.setItem(ALIEN_CLEANERS_STORAGE_KEY, cleaners.toString());
+        localStorage.setItem(GAME_STATE_STORAGE_KEY, JSON.stringify(state));
     }
 
     addBooster(amount: number) {
