@@ -36,6 +36,7 @@ interface Particle {
     shape?: 'circle' | 'square' | 'triangle';
     originalVx?: number;
     originalVy?: number;
+    image?: HTMLImageElement;
 }
 
 interface FogSpot {
@@ -112,6 +113,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     private cooldownDecayInterval: number | undefined;
     private keyboardMatrix: Map<string, KeyPosition> = new Map();
     private comboKeyTimestamps: number[] = [];
+    private particleImages: HTMLImageElement[] = [];
     private swUpdateSubscription: Subscription | undefined;
     private swCheckForUpdateSubscription: Subscription | undefined;
     private mobileTapTimestamps: number[] = [];
@@ -228,13 +230,33 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
     ngAfterViewInit() {
         const canvas = this.canvasRef.nativeElement;
         this.ctx = canvas.getContext('2d')!;
-
         this.resizeCanvas();
-        this.initializeParticles();
-        this.initializeStripes();
-        this.animate();
+        this.loadParticleImages().then(() => {
+            this.initializeParticles();
+            this.initializeStripes();
+            this.animate();
+        });
         this.addPunctuationStyles();
         this.initializeKeyboardMatrix();
+    }
+
+    private async loadParticleImages(): Promise<void> {
+        const imageSources = [
+            'assets/images/particles/optimized/1_o.png',
+            'assets/images/particles/optimized/2_o.png',
+            'assets/images/particles/optimized/3_o.png',
+            'assets/images/particles/optimized/4_o.png',
+        ];
+        const imagePromises = imageSources.map(
+            (src) =>
+                new Promise<HTMLImageElement>((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = src;
+                })
+        );
+        this.particleImages = await Promise.all(imagePromises);
     }
 
     ngOnDestroy() {
@@ -666,11 +688,19 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
         for (let i = 0; i < 20; i++) {
             setTimeout(() => {
-                this.processCombo(
-                    `ultimate-${i}`,
-                    Math.random() * this.canvasRef.nativeElement.width,
-                    Math.random() * this.canvasRef.nativeElement.height
+                const { width, height } = this.canvasRef.nativeElement;
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+
+                // Trigger visual effects at random points. This was the missing piece.
+                this.triggerEffect(
+                    x,
+                    y,
+                    GAME_CONFIG.explosion.types.highStrike
                 );
+
+                // Also call processCombo for score, logging, and black hole nudge
+                this.processCombo(`ultimate-${i}`, x, y);
             }, i * 50); // A faster 50ms delay between each combo
         }
     }
@@ -774,6 +804,10 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
 
     private createCosmicParticle(canvas: HTMLCanvasElement): Particle {
         const colors = GAME_CONFIG.cosmicParticle.colors;
+        const image =
+            this.particleImages[
+                Math.floor(Math.random() * this.particleImages.length)
+            ];
         return {
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
@@ -785,6 +819,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             color: colors[Math.floor(Math.random() * colors.length)],
             alpha: Math.random() * 0.5 + 0.5,
             life: 1,
+            image,
         };
     }
 
@@ -906,8 +941,11 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             x,
             y,
             size:
-                Math.random() * (explosionType.particleSize.max * 20) +
-                explosionType.particleSize.min * 20,
+                Math.random() *
+                    (explosionType.particleSize.max -
+                        explosionType.particleSize.min) *
+                    10 +
+                explosionType.particleSize.min * 10,
             rotation: Math.random() * Math.PI * 2,
             color: colors[Math.floor(Math.random() * colors.length)],
             alpha: 0.7, // Initial opacity
@@ -921,13 +959,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         y: number,
         explosionType: ExplosionType
     ) {
-        let particleCount =
-            Math.floor(
-                Math.random() *
-                    (explosionType.particleCount.max -
-                        explosionType.particleCount.min +
-                        1)
-            ) + explosionType.particleCount.min;
+        let particleCount = explosionType.score;
 
         // Dynamically reduce particle count if the system is under load
         const currentParticleCount = this.particles.length;
@@ -966,6 +998,10 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             sizeMultiplier;
 
         const colors = GAME_CONFIG.explosion.colors;
+        const image =
+            this.particleImages[
+                Math.floor(Math.random() * this.particleImages.length)
+            ];
         const shapes: Particle['shape'][] = ['circle', 'square', 'triangle'];
 
         return {
@@ -980,6 +1016,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             alpha: 1,
             life: 1, // Explosion particles have a limited life
             shape: shapes[Math.floor(Math.random() * shapes.length)],
+            image,
         };
     }
 
@@ -1178,30 +1215,27 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = particle.color;
 
-            this.ctx.translate(projectedX, projectedY);
-            this.ctx.beginPath();
-
-            const shape = particle.shape || 'circle';
             const size = Math.max(0, projectedSize);
-            switch (shape) {
-                case 'square':
-                    this.ctx.rect(-size / 2, -size / 2, size, size);
-                    break;
-                case 'triangle':
-                    this.ctx.moveTo(0, -size / 2);
-                    this.ctx.lineTo(size * 0.433, size / 4);
-                    this.ctx.lineTo(-size * 0.433, size / 4);
-                    this.ctx.closePath();
-                    break;
-                case 'circle':
-                default:
-                    this.ctx.arc(0, 0, size, 0, Math.PI * 2);
-                    break;
+            if (particle.image) {
+                this.ctx.translate(projectedX, projectedY);
+                // Add a subtle rotation based on particle's velocity and life
+                const rotation =
+                    Math.atan2(particle.vy, particle.vx) + particle.life * 5;
+                this.ctx.rotate(rotation);
+                this.ctx.drawImage(
+                    particle.image,
+                    -size / 2,
+                    -size / 2,
+                    size,
+                    size
+                );
+                this.ctx.restore();
+            } else {
+                this.ctx.beginPath();
+                this.ctx.arc(projectedX, projectedY, size, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.restore();
             }
-
-            this.ctx.fill();
-
-            this.ctx.restore();
         });
     }
 
