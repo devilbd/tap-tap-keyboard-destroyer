@@ -836,7 +836,7 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
             vx: (Math.random() - 0.5) * 0.5,
             vy: (Math.random() - 0.5) * 0.5,
             vz: 0,
-            baseSize: Math.random() * 2 + 1,
+            baseSize: Math.random() * 3 + 3,
             color: colors[Math.floor(Math.random() * colors.length)],
             alpha: Math.random() * 0.5 + 0.5,
             life: 1,
@@ -1407,17 +1407,20 @@ export class CosmicParticlesComponent implements AfterViewInit, OnDestroy {
         this.ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
         this.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        this.vortexAngle += 0.0005;
-        this.accretionDiskAngle -= 0.002; // Rotate faster and in the opposite direction
-        this.updateWarpGate();
-        this.updateStripes();
-        this.updateParticles();
-        this.updateCooldowns();
+        if (this.gameManager.isGameStarted() || this.gameManager.isGameOver()) {
+            this.vortexAngle += 0.0005;
+            this.accretionDiskAngle -= 0.002; // Rotate faster and in the opposite direction
+            this.updateWarpGate();
+            this.updateStripes();
+            this.updateParticles();
+            this.updateCooldowns();
 
-        this.drawStripes();
-        // Draw fog spots underneath the particles for a better depth effect
-        this.drawAccretionDisk();
-        this.drawFogSpots();
+            this.drawStripes();
+            // Draw fog spots underneath the particles for a better depth effect
+            this.drawAccretionDisk();
+            this.drawFogSpots();
+        }
+
         this.drawParticles();
 
         this.animationId = requestAnimationFrame(() => this.animate());

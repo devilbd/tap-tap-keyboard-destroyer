@@ -1,5 +1,5 @@
 export const GAME_CONFIG = {
-    baseParticleCount: 350,
+    baseParticleCount: 200,
     maxParticles: 600, // A hard cap to prevent performance degradation
     minTimeBetweenKeysMs: 100,
     comboTimeWindowMs: 400, // Time window to press 4 keys for a combo
@@ -74,30 +74,30 @@ export const GAME_CONFIG = {
         types: {
             small: {
                 particleCount: { min: 5, max: 13 },
-                particleSize: { min: 25, max: 35 },
+                particleSize: { min: 35, max: 45 },
                 particleSpeed: { min: 8, max: 16 },
                 score: 1,
                 probability: 0.75, // 75% chance
             },
             medium: {
                 particleCount: { min: 20, max: 30 },
-                particleSize: { min: 35, max: 45 },
+                particleSize: { min: 45, max: 60 },
                 particleSpeed: { min: 12, max: 24 },
                 score: 5,
                 probability: 0.2, // 20% chance
             },
             large: {
                 particleCount: { min: 35, max: 50 },
-                particleSize: { min: 45, max: 50 },
+                particleSize: { min: 55, max: 70 },
                 particleSpeed: { min: 16, max: 32 },
-                score: 25,
+                score: 20,
                 probability: 0.05, // 5% chance
             },
             highStrike: {
                 particleCount: { min: 75, max: 100 },
-                particleSize: { min: 45, max: 50 },
+                particleSize: { min: 55, max: 70 },
                 particleSpeed: { min: 20, max: 40 },
-                score: 100, // This will fill the progress bar instantly
+                score: 50,
                 probability: 0, // Not triggered by random chance
             },
         },
